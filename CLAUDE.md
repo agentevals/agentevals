@@ -5,8 +5,6 @@ This repository contains the AgentEvals specification - industry-standard evalua
 ## Repository Structure
 
 - `docs/` - Astro + Starlight documentation site
-- `spec/` - Machine-readable JSON schemas and examples
-- `evals-ref/` - Reference implementation library (TypeScript)
 
 ## Key Concepts
 
