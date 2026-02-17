@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
-  "$id": "https://agentevals.dev/schema/eval.schema.json",
+  "$id": "https://agentevals.io/schema/eval.schema.json",
   "title": "AgentEvals EVAL.yaml Schema",
   "description": "Schema for AgentEvals evaluation definition files",
   "type": "object",
