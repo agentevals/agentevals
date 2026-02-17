@@ -15,19 +15,6 @@ AgentEvals defines a declarative format for evaluating AI agent capabilities. Th
 - **Flexible organization** - Supports centralized (`evals/`) or skill-based (`skills/*/evals/`) patterns
 - **Skills integration** - Natural pairing with the [AgentSkills](https://github.com/agentskills/agentskills) format
 
-## Quick Start
-
-```bash
-# Clone the repository
-git clone https://github.com/agentevals/agentevals.git
-cd agentevals
-
-# Install documentation site dependencies
-cd docs
-bun install
-bun run dev
-```
-
 ## Documentation
 
 Visit [agentevals.io](https://agentevals.io) for full documentation.
@@ -58,4 +45,4 @@ evalcases:
 
 ## License
 
-Apache-2.0
+MIT
