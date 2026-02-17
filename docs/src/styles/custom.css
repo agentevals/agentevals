@@ -1,81 +1,47 @@
-@import "tailwindcss";
-
-/* AgentEvals Custom Theme */
+/* Force dark mode colors */
 :root {
-  /* Primary accent - Indigo */
-  --sl-color-accent: 99 102 241;
-  --sl-color-accent-low: 30 27 75;
-  --sl-color-accent-high: 199 210 254;
-
-  /* Text colors for dark mode */
-  --sl-color-white: 255 255 255;
-  --sl-color-gray-1: 226 232 240;
-  --sl-color-gray-2: 148 163 184;
-  --sl-color-gray-3: 100 116 139;
-  --sl-color-gray-4: 71 85 105;
-  --sl-color-gray-5: 51 65 85;
-  --sl-color-gray-6: 30 41 59;
-  --sl-color-black: 15 23 42;
+  --sl-color-accent: 99, 102, 241;
+  --sl-color-accent-low: 30, 27, 75;
+  --sl-color-accent-high: 199, 210, 254;
+  color-scheme: dark;
 }
 
-/* Force dark mode */
-[data-theme='light'] {
-  --sl-color-accent: 99 102 241;
-  --sl-color-accent-low: 238 242 255;
-  --sl-color-accent-high: 79 70 229;
-}
-
-/* Hide theme toggle - dark mode only */
+/* Hide theme toggle */
 starlight-theme-select {
   display: none;
 }
 
-/* Fixed header with blur background */
-header.header {
-  position: fixed !important;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  background: rgba(10, 15, 30, 0.95) !important;
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+/* Override dark theme backgrounds to pure black */
+html[data-theme='dark'] {
+  --sl-color-bg: #0a0a0a;
+  --sl-color-bg-nav: #0a0a0a;
+  --sl-color-bg-sidebar: #0a0a0a;
 }
 
-/* Ensure content doesn't hide under fixed header */
-.main-frame {
-  padding-top: 0;
+/* Direct background overrides - use !important to ensure override */
+html[data-theme='dark'],
+html[data-theme='dark'] body {
+  background-color: #0a0a0a !important;
 }
 
-/* Make sure the site title in header is visible */
-.site-title {
-  color: rgb(var(--sl-color-white)) !important;
+[data-theme='dark'] header,
+[data-theme='dark'] nav.sidebar,
+[data-theme='dark'] .sidebar-pane,
+[data-theme='dark'] .sidebar-content {
+  background-color: #0a0a0a !important;
 }
 
-/* Search button styling for better visibility */
-site-search button {
-  background: rgba(30, 41, 59, 0.8) !important;
-  border: 1px solid rgba(99, 102, 241, 0.2) !important;
+/* Primary button - ensure white text on accent background in dark mode */
+[data-theme='dark'] .sl-link-button.primary {
+  background-color: rgb(var(--sl-color-accent));
+  color: #ffffff !important;
 }
 
-/* Custom hero styling for landing page */
-.hero-home {
-  margin: 0 calc(-50vw + 50%);
-  padding: 4rem calc(50vw - 50%);
-  background: linear-gradient(
-    135deg,
-    rgba(99, 102, 241, 0.1) 0%,
-    rgba(15, 23, 42, 0) 50%
-  );
+/* Reduce hero section top padding */
+.hero {
+  padding-top: 2rem !important;
 }
 
-/* Code block styling */
-.expressive-code pre {
-  border-radius: 0.5rem;
-}
-
-/* Sidebar improvements */
-.sidebar-content {
-  padding-bottom: 2rem;
+.expressive-code {
+  margin: 1.5rem 0;
 }
