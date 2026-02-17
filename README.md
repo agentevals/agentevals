@@ -6,7 +6,7 @@ Industry-standard evaluation specifications for AI agents.
 
 AgentEvals defines a declarative format for evaluating AI agent capabilities. The specification enables consistent, reproducible evaluation across different agent implementations and platforms.
 
-**AgentV** is the canonical implementation of the AgentEvals standard.
+[**AgentV**](https://agentv.dev/) is the canonical implementation of the AgentEvals standard.
 
 ## Key Features
 
