@@ -4,7 +4,7 @@ import starlight from '@astrojs/starlight';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-  site: 'https://agentevals.dev',
+  site: 'https://agentevals.io',
   vite: {
     plugins: [tailwindcss()],
     server: {
