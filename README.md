@@ -30,7 +30,7 @@ bun run dev
 
 ## Documentation
 
-Visit [agentevals.dev](https://agentevals.dev) for full documentation.
+Visit [agentevals.io](https://agentevals.io) for full documentation.
 
 ## Example EVAL.yaml
 
