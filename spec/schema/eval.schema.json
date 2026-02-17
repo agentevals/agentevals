@@ -1,0 +1,496 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://agentevals.dev/schema/eval.schema.json",
+  "title": "AgentEvals EVAL.yaml Schema",
+  "description": "Schema for AgentEvals evaluation definition files",
+  "type": "object",
+  "required": ["name", "evalcases"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Unique identifier for the evaluation suite",
+      "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$",
+      "minLength": 2,
+      "maxLength": 64
+    },
+    "version": {
+      "type": "string",
+      "description": "Specification version",
+      "default": "1.0"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the evaluation suite",
+      "maxLength": 2048
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Custom key-value pairs for organization and discovery",
+      "properties": {
+        "author": { "type": "string" },
+        "license": { "type": "string" },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "skill": {
+          "type": "string",
+          "description": "Reference to an AgentSkills skill"
+        }
+      },
+      "additionalProperties": true
+    },
+    "execution": {
+      "$ref": "#/$defs/ExecutionConfig"
+    },
+    "evalcases": {
+      "type": "array",
+      "description": "Array of evaluation cases",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Evalcase"
+      }
+    }
+  },
+  "$defs": {
+    "ExecutionConfig": {
+      "type": "object",
+      "description": "Execution configuration for evaluations",
+      "properties": {
+        "target": {
+          "type": "string",
+          "description": "Target provider name from targets.yaml",
+          "default": "default"
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "description": "Maximum execution time in seconds",
+          "minimum": 1,
+          "maximum": 3600,
+          "default": 300
+        },
+        "evaluators": {
+          "type": "array",
+          "description": "Array of evaluator configurations",
+          "items": {
+            "$ref": "#/$defs/Evaluator"
+          }
+        }
+      }
+    },
+    "Evalcase": {
+      "type": "object",
+      "description": "A single evaluation case",
+      "required": ["id", "expected_outcome"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier within the file"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description"
+        },
+        "expected_outcome": {
+          "type": "string",
+          "description": "Natural language description of success criteria"
+        },
+        "input": {
+          "oneOf": [
+            { "type": "string" },
+            {
+              "type": "array",
+              "items": { "$ref": "#/$defs/Message" }
+            }
+          ],
+          "description": "Input to the agent (shorthand or full messages)"
+        },
+        "input_messages": {
+          "type": "array",
+          "description": "Canonical form of input messages",
+          "items": { "$ref": "#/$defs/Message" }
+        },
+        "expected_output": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "object" },
+            {
+              "type": "array",
+              "items": { "$ref": "#/$defs/Message" }
+            }
+          ],
+          "description": "Expected output for comparison"
+        },
+        "expected_messages": {
+          "type": "array",
+          "description": "Canonical form of expected messages",
+          "items": { "$ref": "#/$defs/Message" }
+        },
+        "rubrics": {
+          "type": "array",
+          "description": "Inline evaluation criteria",
+          "items": {
+            "oneOf": [
+              { "type": "string" },
+              { "$ref": "#/$defs/Rubric" }
+            ]
+          }
+        },
+        "execution": {
+          "$ref": "#/$defs/ExecutionConfig",
+          "description": "Per-case execution override"
+        },
+        "conversation_id": {
+          "type": "string",
+          "description": "Groups related multi-turn cases"
+        },
+        "note": {
+          "type": "string",
+          "description": "Test-specific context for evaluators"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Custom key-value pairs",
+          "additionalProperties": true
+        }
+      },
+      "anyOf": [
+        { "required": ["input"] },
+        { "required": ["input_messages"] }
+      ]
+    },
+    "Message": {
+      "type": "object",
+      "description": "A conversation message",
+      "required": ["role"],
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": ["system", "user", "assistant", "tool"],
+          "description": "Message role"
+        },
+        "content": {
+          "oneOf": [
+            { "type": "string" },
+            {
+              "type": "array",
+              "items": { "$ref": "#/$defs/ContentBlock" }
+            }
+          ],
+          "description": "Message content"
+        },
+        "tool_call_id": {
+          "type": "string",
+          "description": "For tool messages, references the tool call"
+        },
+        "name": {
+          "type": "string",
+          "description": "Tool name for tool messages"
+        },
+        "tool_calls": {
+          "type": "array",
+          "description": "Tool calls for assistant messages",
+          "items": { "$ref": "#/$defs/ToolCall" }
+        }
+      }
+    },
+    "ContentBlock": {
+      "type": "object",
+      "description": "A content block within a message",
+      "required": ["type", "value"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["text", "file", "image", "json"],
+          "description": "Content block type"
+        },
+        "value": {
+          "description": "Content value (string for text/file/image, object for json)"
+        }
+      }
+    },
+    "ToolCall": {
+      "type": "object",
+      "description": "A tool call from an assistant message",
+      "required": ["id", "type", "function"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique tool call identifier"
+        },
+        "type": {
+          "type": "string",
+          "const": "function"
+        },
+        "function": {
+          "type": "object",
+          "required": ["name", "arguments"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Function name"
+            },
+            "arguments": {
+              "type": "string",
+              "description": "JSON string of arguments"
+            }
+          }
+        }
+      }
+    },
+    "Rubric": {
+      "type": "object",
+      "description": "A structured evaluation criterion",
+      "required": ["id", "expected_outcome"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for this rubric"
+        },
+        "expected_outcome": {
+          "type": "string",
+          "description": "What this rubric evaluates"
+        },
+        "weight": {
+          "type": "number",
+          "description": "Scoring weight",
+          "minimum": 0,
+          "default": 1.0
+        },
+        "required": {
+          "type": "boolean",
+          "description": "If true, failing this rubric fails the entire eval",
+          "default": false
+        },
+        "score_ranges": {
+          "type": "object",
+          "description": "Analytic scoring descriptions (0-10 scale)",
+          "properties": {
+            "0": { "type": "string" },
+            "5": { "type": "string" },
+            "10": { "type": "string" }
+          },
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "Evaluator": {
+      "type": "object",
+      "description": "An evaluator configuration",
+      "required": ["name", "type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Unique name for this evaluator"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "code_judge",
+            "llm_judge",
+            "rubric",
+            "composite",
+            "tool_trajectory",
+            "field_accuracy",
+            "execution_metrics"
+          ],
+          "description": "Evaluator type"
+        },
+        "weight": {
+          "type": "number",
+          "description": "Scoring weight",
+          "minimum": 0,
+          "default": 1.0
+        },
+        "config": {
+          "type": "object",
+          "description": "Type-specific configuration",
+          "additionalProperties": true
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "code_judge" } } },
+          "then": {
+            "properties": {
+              "script": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Command to execute"
+              },
+              "cwd": {
+                "type": "string",
+                "description": "Working directory"
+              }
+            },
+            "required": ["script"]
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "llm_judge" } } },
+          "then": {
+            "properties": {
+              "prompt": {
+                "type": "string",
+                "description": "Path to prompt template or inline prompt"
+              },
+              "target": {
+                "type": "string",
+                "description": "Override target for judge model"
+              }
+            },
+            "required": ["prompt"]
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "composite" } } },
+          "then": {
+            "properties": {
+              "evaluators": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/Evaluator" },
+                "description": "Child evaluators"
+              },
+              "aggregator": {
+                "$ref": "#/$defs/Aggregator",
+                "description": "Aggregation strategy"
+              }
+            },
+            "required": ["evaluators"]
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "tool_trajectory" } } },
+          "then": {
+            "properties": {
+              "mode": {
+                "type": "string",
+                "enum": ["any_order", "in_order", "exact"],
+                "description": "Matching mode"
+              },
+              "expected": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/ExpectedToolCall" },
+                "description": "Expected tool calls"
+              },
+              "minimums": {
+                "type": "object",
+                "description": "Minimum call counts per tool",
+                "additionalProperties": { "type": "integer" }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "field_accuracy" } } },
+          "then": {
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/FieldSpec" },
+                "description": "Fields to check"
+              },
+              "aggregation": {
+                "type": "string",
+                "enum": ["weighted_average", "minimum", "all_or_nothing"],
+                "default": "weighted_average"
+              }
+            },
+            "required": ["fields"]
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "execution_metrics" } } },
+          "then": {
+            "properties": {
+              "max_tool_calls": { "type": "integer" },
+              "max_llm_calls": { "type": "integer" },
+              "max_tokens": { "type": "integer" },
+              "max_cost_usd": { "type": "number" },
+              "max_duration_ms": { "type": "integer" }
+            }
+          }
+        }
+      ]
+    },
+    "Aggregator": {
+      "type": "object",
+      "description": "Aggregation strategy for composite evaluators",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "weighted_average",
+            "minimum",
+            "maximum",
+            "safety_gate",
+            "all_or_nothing"
+          ]
+        },
+        "weights": {
+          "type": "object",
+          "description": "Custom weights per evaluator name",
+          "additionalProperties": { "type": "number" }
+        },
+        "required": {
+          "type": "array",
+          "description": "Evaluator names that must pass (for safety_gate)",
+          "items": { "type": "string" }
+        },
+        "threshold": {
+          "type": "number",
+          "description": "Threshold for all_or_nothing",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "ExpectedToolCall": {
+      "type": "object",
+      "description": "Expected tool call specification",
+      "required": ["tool"],
+      "properties": {
+        "tool": {
+          "type": "string",
+          "description": "Tool name"
+        },
+        "args": {
+          "description": "Expected arguments (object or 'any')"
+        },
+        "max_duration_ms": {
+          "type": "integer",
+          "description": "Maximum duration for this call"
+        }
+      }
+    },
+    "FieldSpec": {
+      "type": "object",
+      "description": "Field accuracy specification",
+      "required": ["path"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "JSON path to the field (dot notation)"
+        },
+        "match": {
+          "type": "string",
+          "enum": ["exact", "contains", "regex", "numeric_tolerance", "date"],
+          "default": "exact"
+        },
+        "required": {
+          "type": "boolean",
+          "default": false
+        },
+        "weight": {
+          "type": "number",
+          "default": 1.0
+        },
+        "tolerance": {
+          "type": "number",
+          "description": "Tolerance for numeric_tolerance match"
+        }
+      }
+    }
+  }
+}

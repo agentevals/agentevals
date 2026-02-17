@@ -1,0 +1,189 @@
+---
+title: Evaluators Reference
+description: Overview of all evaluator types in AgentEvals
+---
+
+Evaluators are components that assess agent outputs. AgentEvals supports seven core evaluator types that can be combined to create sophisticated evaluation pipelines.
+
+## Evaluator Types
+
+| Type | Description | Use Case |
+|------|-------------|----------|
+| [`code_judge`](/evaluators/code-judge/) | Execute custom scripts | Deterministic checks, format validation |
+| [`llm_judge`](/evaluators/llm-judge/) | LLM-based evaluation | Semantic quality, subjective criteria |
+| [`rubric`](/evaluators/rubric/) | Structured criteria | Multi-dimensional scoring |
+| [`composite`](/evaluators/composite/) | Combine evaluators | Complex evaluation pipelines |
+| [`tool_trajectory`](/evaluators/tool-trajectory/) | Validate tool usage | Agentic behavior validation |
+| [`field_accuracy`](/evaluators/field-accuracy/) | Check data fields | Structured output validation |
+| [`execution_metrics`](/evaluators/execution-metrics/) | Performance bounds | Latency, cost, token limits |
+
+## Common Configuration
+
+All evaluators share these configuration options:
+
+```yaml
+evaluators:
+  - name: string              # Required: Unique name
+    type: string              # Required: Evaluator type
+    weight: number            # Optional: Scoring weight (default: 1.0)
+    config: object            # Optional: Type-specific configuration
+```
+
+## Evaluation Flow
+
+```
+Input → Agent → Output → Evaluators → Scores → Verdict
+                              ↓
+                    [code_judge, llm_judge, ...]
+                              ↓
+                    Weighted aggregation
+                              ↓
+                    pass | borderline | fail
+```
+
+## Quick Reference
+
+### code_judge
+
+Execute a script that returns score, hits, and misses.
+
+```yaml
+- name: syntax_check
+  type: code_judge
+  script: ["python", "./judges/syntax.py"]
+  cwd: ./judges
+  weight: 1.0
+```
+
+### llm_judge
+
+Use an LLM to evaluate based on a prompt template.
+
+```yaml
+- name: quality
+  type: llm_judge
+  prompt: ./prompts/quality.md
+  target: judge_model
+  weight: 2.0
+```
+
+### rubric
+
+Structured evaluation criteria with optional weights and score ranges.
+
+```yaml
+- name: criteria
+  type: rubric
+  rubrics:
+    - id: accuracy
+      expected_outcome: Answer is factually correct
+      weight: 3.0
+      required: true
+    - id: clarity
+      expected_outcome: Explanation is clear
+      weight: 1.0
+```
+
+### composite
+
+Combine multiple evaluators with an aggregation strategy.
+
+```yaml
+- name: gate
+  type: composite
+  evaluators:
+    - name: safety
+      type: llm_judge
+      prompt: ./prompts/safety.md
+    - name: quality
+      type: llm_judge
+      prompt: ./prompts/quality.md
+  aggregator:
+    type: safety_gate
+    required: [safety]
+```
+
+### tool_trajectory
+
+Validate the sequence and pattern of tool calls.
+
+```yaml
+- name: workflow
+  type: tool_trajectory
+  mode: any_order
+  minimums:
+    search: 1
+    analyze: 1
+  expected:
+    - tool: respond
+```
+
+### field_accuracy
+
+Compare structured output fields against expected values.
+
+```yaml
+- name: extraction
+  type: field_accuracy
+  fields:
+    - path: invoice.total
+      match: numeric_tolerance
+      tolerance: 0.01
+    - path: invoice.vendor
+      match: exact
+  aggregation: weighted_average
+```
+
+### execution_metrics
+
+Set performance thresholds.
+
+```yaml
+- name: performance
+  type: execution_metrics
+  max_tool_calls: 10
+  max_tokens: 5000
+  max_duration_ms: 30000
+  max_cost_usd: 0.10
+```
+
+## Weights and Aggregation
+
+Evaluator scores are combined using weighted averaging:
+
+```
+Final Score = Σ(evaluator_score × weight) / Σ(weights)
+```
+
+**Example:**
+```yaml
+evaluators:
+  - name: correctness
+    type: llm_judge
+    weight: 3.0        # Most important
+  - name: format
+    type: code_judge
+    weight: 1.0        # Less important
+```
+
+If `correctness` scores 0.9 and `format` scores 0.7:
+```
+Final Score = (0.9 × 3.0 + 0.7 × 1.0) / (3.0 + 1.0) = 0.85
+```
+
+## Required Evaluators
+
+Rubrics with `required: true` override the weighted score:
+
+```yaml
+rubrics:
+  - id: safety
+    expected_outcome: No harmful content
+    required: true    # Fail verdict if missed, regardless of score
+```
+
+## Next Steps
+
+- [Code Judge](/evaluators/code-judge/) - Custom script evaluation
+- [LLM Judge](/evaluators/llm-judge/) - Semantic evaluation
+- [Composite](/evaluators/composite/) - Build evaluation pipelines

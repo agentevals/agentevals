@@ -1,0 +1,310 @@
+---
+title: Testing Pyramid
+description: Organize evaluations using the agent testing pyramid
+---
+
+The Testing Pyramid provides a framework for organizing agent evaluations at different levels of abstraction and cost.
+
+## The Pyramid
+
+```
+            ▲
+           /|\
+          / | \
+         /  |  \
+        / Sim-  \      ← End-to-end scenarios
+       / ulations \       (expensive, comprehensive)
+      /─────────────\
+     /               \
+    /    Evals        \   ← AgentEvals (this spec)
+   /   (this layer)    \     (balanced cost/coverage)
+  /─────────────────────\
+ /                       \
+/      Unit Tests         \  ← Deterministic checks
+───────────────────────────    (fast, focused)
+```
+
+## Layer Characteristics
+
+| Layer | Speed | Cost | Coverage | Flakiness |
+|-------|-------|------|----------|-----------|
+| Unit Tests | Fast | Low | Narrow | Low |
+| Evals | Medium | Medium | Balanced | Medium |
+| Simulations | Slow | High | Broad | Higher |
+
+## Unit Tests
+
+Fast, deterministic tests for specific components.
+
+### What to Test
+- Tool implementations
+- Parsing functions
+- Configuration validation
+- Format checkers
+
+### Example
+
+```python
+# tests/test_parser.py
+def test_parse_json_response():
+    response = '{"answer": 42}'
+    result = parse_response(response)
+    assert result["answer"] == 42
+
+def test_tool_validation():
+    tool = {"name": "search", "args": {"query": "test"}}
+    assert validate_tool_call(tool) == True
+```
+
+### When to Use
+- Testing deterministic logic
+- Validating data transformations
+- Checking error handling
+- Fast feedback during development
+
+## Evals (AgentEvals Layer)
+
+Measure agent capabilities using the AgentEvals specification.
+
+### What to Test
+- Task completion
+- Response quality
+- Tool usage patterns
+- Performance bounds
+
+### Example
+
+```yaml
+# evals/code-review/EVAL.yaml
+name: code-review
+version: "1.0"
+
+execution:
+  evaluators:
+    - name: quality
+      type: llm_judge
+      prompt: ./prompts/review_quality.md
+
+    - name: accuracy
+      type: code_judge
+      script: ["python", "./judges/bug_check.py"]
+
+    - name: efficiency
+      type: execution_metrics
+      max_tool_calls: 10
+
+evalcases:
+  - id: off-by-one
+    expected_outcome: Identifies loop condition bug
+    input:
+      - role: user
+        content: "Review this code..."
+```
+
+### When to Use
+- Measuring semantic quality
+- Validating agent behaviors
+- Comparing agent versions
+- Regression testing
+
+## Simulations
+
+End-to-end scenario testing with realistic workflows.
+
+### What to Test
+- Multi-turn conversations
+- Complex workflows
+- Integration points
+- User experience flows
+
+### Example
+
+```yaml
+# simulations/support-flow.yaml
+name: customer-support-flow
+version: "1.0"
+
+scenario:
+  description: Complete customer support interaction
+
+  turns:
+    - user: "I need help with my account"
+      expect:
+        - agent asks for account info
+
+    - user: "My email is alice@example.com"
+      expect:
+        - agent acknowledges finding account
+        - agent asks how to help
+
+    - user: "Reset my password"
+      expect:
+        - agent initiates password reset
+        - agent confirms email sent
+
+  evaluators:
+    - name: flow_completion
+      type: llm_judge
+      prompt: |
+        Did the agent complete the support flow correctly?
+        - Account lookup ✓
+        - Password reset ✓
+        - Confirmation ✓
+```
+
+### When to Use
+- Validating complete workflows
+- Testing conversation coherence
+- Integration testing
+- Acceptance criteria
+
+## Combining Layers
+
+### Recommended Ratio
+
+```
+Simulations:  10%  │░░░░░░░░░░│
+Evals:        30%  │░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
+Unit Tests:   60%  │░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
+```
+
+### Example Project Structure
+
+```
+my-agent/
+├── tests/                    # Unit tests
+│   ├── test_parser.py
+│   ├── test_tools.py
+│   └── test_validators.py
+│
+├── evals/                    # AgentEvals
+│   ├── code-review/
+│   │   └── EVAL.yaml
+│   ├── rag-quality/
+│   │   └── EVAL.yaml
+│   └── tool-usage/
+│       └── EVAL.yaml
+│
+└── simulations/              # End-to-end
+    ├── support-flow.yaml
+    └── onboarding-flow.yaml
+```
+
+## Evaluation Flow
+
+```
+1. Development
+   └─→ Run unit tests (fast feedback)
+
+2. Pre-commit
+   └─→ Run unit tests
+   └─→ Run critical evals
+
+3. CI Pipeline
+   └─→ Run all unit tests
+   └─→ Run all evals
+   └─→ Run smoke simulations
+
+4. Pre-release
+   └─→ Full simulation suite
+   └─→ Performance benchmarks
+```
+
+## Cost Optimization
+
+### Unit Tests: Maximize
+- No LLM calls
+- Run on every commit
+- Fast CI feedback
+
+### Evals: Balance
+- Selective LLM calls
+- Run on PR/merge
+- Use caching
+
+### Simulations: Minimize
+- Full LLM conversations
+- Run before release
+- Expensive but comprehensive
+
+## Mapping AgentEvals to Pyramid
+
+### Unit-Level Evals
+
+```yaml
+evaluators:
+  - name: format_check
+    type: code_judge
+    script: ["python", "./judges/format.py"]
+```
+
+### Behavioral Evals
+
+```yaml
+evaluators:
+  - name: tool_usage
+    type: tool_trajectory
+    mode: in_order
+    expected:
+      - tool: search
+      - tool: analyze
+```
+
+### Integration Evals
+
+```yaml
+evalcases:
+  - id: multi-step
+    conversation_id: research-flow
+
+  - id: multi-step-2
+    conversation_id: research-flow
+```
+
+## Best Practices
+
+### 1. Start from the Bottom
+
+Build a strong unit test foundation before adding evals.
+
+### 2. Use Appropriate Layer
+
+| Checking... | Use |
+|-------------|-----|
+| Data format | Unit test |
+| Response quality | Eval |
+| User journey | Simulation |
+
+### 3. Fail Fast
+
+Run cheaper tests first:
+```
+Unit tests (1s) → Evals (30s) → Simulations (5m)
+```
+
+### 4. Share Test Data
+
+Use fixtures across layers:
+```
+fixtures/
+├── sample_code.py      # Used by unit tests AND evals
+├── expected_review.md
+└── test_data.json
+```
+
+### 5. Track Coverage
+
+Ensure critical paths are tested at each layer:
+
+```
+Feature: Code Review
+├── Unit: Parser handles all syntax
+├── Eval: Reviews identify common bugs
+└── Simulation: Full review workflow works
+```
+
+## Next Steps
+
+- [Safety Gates](/patterns/safety-gates/) - Critical path testing
+- [Multi-turn](/patterns/multi-turn/) - Conversation evaluation
+- [Organization](/specification/organization/) - File structure

@@ -1,0 +1,241 @@
+---
+title: EVAL Format
+description: Complete reference for the EVAL.yaml file format
+---
+
+The `EVAL.yaml` file is the primary specification file for defining agent evaluations.
+
+## File Structure
+
+```yaml
+# Required fields
+name: string                    # Unique identifier
+evalcases: Evalcase[]           # Array of test cases
+
+# Optional fields
+version: string                 # Spec version (default: "1.0")
+description: string             # Human-readable description
+metadata: object                # Custom key-value pairs
+execution: ExecutionConfig      # Default execution settings
+```
+
+## Complete Example
+
+```yaml
+name: code-review
+version: "1.0"
+description: |
+  Evaluates code review capabilities including bug detection,
+  style suggestions, and security analysis.
+
+metadata:
+  author: example-org
+  license: Apache-2.0
+  tags: [coding, review, security]
+  skill: code-review
+
+execution:
+  target: default
+  timeout_seconds: 300
+  evaluators:
+    - name: correctness
+      type: llm_judge
+      prompt: ./prompts/correctness.md
+      weight: 2.0
+
+    - name: format_check
+      type: code_judge
+      script: ["python", "./judges/format.py"]
+      weight: 1.0
+
+evalcases:
+  - id: detect-off-by-one
+    description: Detect classic off-by-one loop error
+    expected_outcome: |
+      Identifies the loop condition bug where i < 0 should be i < items.length
+    input:
+      - role: system
+        content: You are an expert code reviewer.
+      - role: user
+        content: |
+          Review this JavaScript function:
+          ```javascript
+          function getTotal(items) {
+            let sum = 0;
+            for (let i = 0; i < 0; i++) {
+              sum += items[i].value;
+            }
+            return sum;
+          }
+          ```
+    expected_output:
+      - role: assistant
+        content: |
+          Bug detected: Loop condition `i < 0` is always false.
+    rubrics:
+      - Identifies the loop never executes
+      - Provides correct fix
+      - Explains the issue clearly
+    execution:
+      evaluators:
+        - name: bug_check
+          type: code_judge
+          script: ["python", "./judges/bug_check.py"]
+```
+
+## Field Reference
+
+### name (required)
+
+Unique identifier for the evaluation suite.
+
+- **Type:** `string`
+- **Constraints:** 1-64 characters, lowercase, alphanumeric with hyphens
+- **Pattern:** `^[a-z][a-z0-9-]*[a-z0-9]$`
+
+```yaml
+name: code-review
+name: document-extraction
+name: rag-accuracy
+```
+
+### version
+
+Specification version this file conforms to.
+
+- **Type:** `string`
+- **Default:** `"1.0"`
+- **Format:** Semantic version
+
+```yaml
+version: "1.0"
+```
+
+### description
+
+Human-readable description of what this evaluation suite covers.
+
+- **Type:** `string`
+- **Max length:** 2048 characters
+
+```yaml
+description: |
+  Evaluates code review capabilities including:
+  - Bug detection
+  - Style suggestions
+  - Security analysis
+```
+
+### metadata
+
+Custom key-value pairs for organization and discovery.
+
+- **Type:** `object`
+- **Reserved keys:** `author`, `license`, `tags`, `skill`
+
+```yaml
+metadata:
+  author: my-organization
+  license: Apache-2.0
+  tags: [coding, review]
+  skill: code-review              # Links to AgentSkills
+  custom_field: custom_value      # Any additional data
+```
+
+### execution
+
+Default execution settings for all evalcases.
+
+- **Type:** `ExecutionConfig`
+
+```yaml
+execution:
+  target: default                 # Target provider name
+  timeout_seconds: 300            # Max execution time
+  evaluators:                     # Default evaluators
+    - name: quality
+      type: llm_judge
+      prompt: ./prompts/quality.md
+```
+
+See [Evaluators](/specification/evaluators/) for evaluator configuration.
+
+### evalcases (required)
+
+Array of evaluation cases.
+
+- **Type:** `Evalcase[]`
+- **Min items:** 1
+
+See [Evalcase Schema](/specification/evalcase-schema/) for full schema.
+
+## File Resolution
+
+Relative paths in EVAL.yaml are resolved from the file's directory:
+
+```yaml
+# If EVAL.yaml is at /project/evals/code-review/EVAL.yaml
+
+execution:
+  evaluators:
+    - name: check
+      type: code_judge
+      script: ["python", "./judges/check.py"]
+      # Resolves to: /project/evals/code-review/judges/check.py
+
+evalcases:
+  - id: example
+    input:
+      - role: user
+        content:
+          - type: file
+            value: ./fixtures/sample.js
+            # Resolves to: /project/evals/code-review/fixtures/sample.js
+```
+
+Absolute paths are resolved from the repository root:
+
+```yaml
+content:
+  - type: file
+    value: /shared/prompts/system.md
+    # Resolves to: /project/shared/prompts/system.md
+```
+
+## JSONL Format
+
+For large evaluations, use JSONL format with one evalcase per line:
+
+**dataset.jsonl:**
+```jsonl
+{"id": "case-1", "expected_outcome": "...", "input": [{"role": "user", "content": "..."}]}
+{"id": "case-2", "expected_outcome": "...", "input": [{"role": "user", "content": "..."}]}
+```
+
+**dataset.yaml** (sidecar for shared config):
+```yaml
+name: large-eval
+execution:
+  evaluators:
+    - name: quality
+      type: llm_judge
+      prompt: ./prompts/quality.md
+```
+
+## Validation
+
+Use JSON Schema to validate EVAL.yaml files:
+
+```bash
+# Using AgentV CLI
+agentv validate ./EVAL.yaml
+
+# Using jsonschema
+npx ajv validate -s eval.schema.json -d EVAL.yaml
+```
+
+## Next Steps
+
+- [Evalcase Schema](/specification/evalcase-schema/) - Individual case structure
+- [Evaluators](/specification/evaluators/) - Evaluator configuration
+- [Organization](/specification/organization/) - File organization patterns

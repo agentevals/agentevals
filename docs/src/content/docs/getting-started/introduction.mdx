@@ -1,0 +1,101 @@
+---
+title: Introduction
+description: What are agent evaluations and why do they matter?
+---
+
+## What is AgentEvals?
+
+AgentEvals is an open specification for evaluating AI agent capabilities. It provides a declarative YAML-based format for defining evaluation suites that can measure agent performance across diverse tasks.
+
+### The Problem
+
+AI agents are becoming increasingly capable, but measuring their performance consistently remains challenging:
+
+- **No standard format** - Every team invents their own evaluation approach
+- **Inconsistent metrics** - Hard to compare results across different agents
+- **Fragmented tooling** - Tools don't interoperate
+- **Manual effort** - Writing evaluation code from scratch is tedious
+
+### The Solution
+
+AgentEvals provides:
+
+- **Declarative YAML format** - Simple, readable evaluation definitions
+- **Standard evaluator types** - Code judges, LLM judges, rubrics, and more
+- **Flexible organization** - Centralized or skill-based patterns
+- **Composability** - Build complex evaluations from primitives
+
+## Core Concepts
+
+### EVAL.yaml
+
+The primary specification file that defines an evaluation suite:
+
+```yaml
+name: my-agent-eval
+version: "1.0"
+description: Evaluates my agent capabilities
+
+evalcases:
+  - id: basic-task
+    expected_outcome: Agent completes the task correctly
+    input:
+      - role: user
+        content: "Perform this task..."
+```
+
+### Evalcases
+
+Individual test cases within an evaluation suite. Each evalcase defines:
+
+- **Input** - What to send to the agent
+- **Expected outcome** - Natural language description of success
+- **Evaluators** - How to measure success (optional, can inherit from suite)
+
+### Evaluators
+
+Components that assess agent outputs:
+
+| Type | Purpose |
+|------|---------|
+| `code_judge` | Execute custom scripts |
+| `llm_judge` | LLM-based semantic evaluation |
+| `rubric` | Structured criteria with weights |
+| `composite` | Combine multiple evaluators |
+| `tool_trajectory` | Validate tool usage patterns |
+| `field_accuracy` | Check structured data fields |
+| `execution_metrics` | Measure latency, cost, tokens |
+
+### Verdicts
+
+Evaluation results are normalized to three verdicts:
+
+- **pass** - Score >= 0.8
+- **borderline** - Score >= 0.6 and < 0.8
+- **fail** - Score < 0.6
+
+## Design Principles
+
+AgentEvals follows **agent-native architecture** principles:
+
+1. **Parity** - Evals should test what agents actually do in production
+2. **Granularity** - Prefer atomic evaluators that compose
+3. **Composability** - Build sophisticated evals from simple primitives
+4. **Emergent Capability** - Support testing novel, unanticipated behaviors
+5. **Improvement Over Time** - Track progress as agents evolve
+
+## Relationship to AgentV
+
+**AgentV** is the canonical implementation of the AgentEvals standard. It provides:
+
+- CLI for running evaluations
+- Provider integrations (Azure, Anthropic, etc.)
+- Result tracking and reporting
+
+Other tools can adopt the AgentEvals specification to ensure interoperability.
+
+## Next Steps
+
+- [Quick Start](/getting-started/quick-start/) - Create your first evaluation
+- [Specification Overview](/specification/overview/) - Deep dive into the format
+- [Evaluator Types](/evaluators/code-judge/) - Learn about each evaluator

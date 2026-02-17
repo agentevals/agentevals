@@ -1,0 +1,314 @@
+---
+title: Code Judge
+description: Execute custom scripts for deterministic evaluation
+---
+
+The `code_judge` evaluator executes custom scripts that return structured evaluation results. Use it for deterministic checks, format validation, and custom logic.
+
+## Configuration
+
+```yaml
+evaluators:
+  - name: my_check
+    type: code_judge
+    script: ["python", "./judges/check.py"]
+    cwd: ./judges
+    weight: 1.0
+    config:
+      custom_option: value
+```
+
+### Properties
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `script` | `string[]` | Yes | Command to execute |
+| `cwd` | `string` | No | Working directory (default: eval file directory) |
+| `weight` | `number` | No | Scoring weight (default: 1.0) |
+| `config` | `object` | No | Custom configuration passed to script |
+| `target` | `object` | No | Enable target proxy for script to call agents |
+
+## Input Format
+
+Scripts receive JSON on stdin:
+
+```json
+{
+  "question": "The user's question/input",
+  "expectedOutcome": "Natural language success criteria",
+  "expectedMessages": [],
+  "referenceAnswer": "Expected output if provided",
+  "candidateAnswer": "The agent's response",
+  "outputMessages": [],
+  "guidelineFiles": [],
+  "inputFiles": [],
+  "inputMessages": [],
+  "traceSummary": {
+    "eventCount": 5,
+    "toolNames": ["search", "read"],
+    "costUsd": 0.01,
+    "durationMs": 2500
+  },
+  "config": {
+    "custom_option": "value"
+  }
+}
+```
+
+## Output Format
+
+Scripts must output JSON to stdout:
+
+```json
+{
+  "score": 0.85,
+  "hits": [
+    "Criterion 1 met",
+    "Criterion 2 met"
+  ],
+  "misses": [
+    "Criterion 3 not met"
+  ],
+  "reasoning": "Optional explanation",
+  "details": {
+    "custom_metric": 42
+  }
+}
+```
+
+### Output Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `score` | `number` | Yes | Score between 0.0 and 1.0 |
+| `hits` | `string[]` | Yes | Criteria that were met |
+| `misses` | `string[]` | Yes | Criteria that were not met |
+| `reasoning` | `string` | No | Explanation of the evaluation |
+| `details` | `object` | No | Custom metrics for reporting |
+
+## Examples
+
+### Python Code Judge
+
+**judges/syntax_check.py:**
+```python
+import json
+import sys
+import ast
+
+# Read input
+data = json.load(sys.stdin)
+code = data["candidateAnswer"]
+
+hits = []
+misses = []
+score = 1.0
+
+# Check if valid Python syntax
+try:
+    ast.parse(code)
+    hits.append("Valid Python syntax")
+except SyntaxError as e:
+    misses.append(f"Syntax error: {e}")
+    score = 0.0
+
+# Check for common issues
+if "import *" in code:
+    misses.append("Avoid wildcard imports")
+    score = max(0, score - 0.2)
+else:
+    hits.append("No wildcard imports")
+
+# Output result
+print(json.dumps({
+    "score": score,
+    "hits": hits,
+    "misses": misses
+}))
+```
+
+**EVAL.yaml:**
+```yaml
+execution:
+  evaluators:
+    - name: syntax
+      type: code_judge
+      script: ["python", "./judges/syntax_check.py"]
+```
+
+### TypeScript Code Judge
+
+**judges/format_check.ts:**
+```typescript
+import { defineCodeJudge } from '@agentv/eval';
+
+export default defineCodeJudge(({ candidateAnswer, config }) => {
+  const hits: string[] = [];
+  const misses: string[] = [];
+
+  // Check JSON validity
+  try {
+    JSON.parse(candidateAnswer);
+    hits.push("Valid JSON");
+  } catch {
+    misses.push("Invalid JSON");
+    return { score: 0, hits, misses };
+  }
+
+  // Check required fields
+  const data = JSON.parse(candidateAnswer);
+  const requiredFields = config?.requiredFields || [];
+
+  for (const field of requiredFields) {
+    if (field in data) {
+      hits.push(`Has field: ${field}`);
+    } else {
+      misses.push(`Missing field: ${field}`);
+    }
+  }
+
+  const score = hits.length / (hits.length + misses.length);
+  return { score, hits, misses };
+});
+```
+
+**EVAL.yaml:**
+```yaml
+execution:
+  evaluators:
+    - name: format
+      type: code_judge
+      script: ["npx", "tsx", "./judges/format_check.ts"]
+      config:
+        requiredFields: ["id", "name", "status"]
+```
+
+### Shell Script Judge
+
+**judges/file_check.sh:**
+```bash
+#!/bin/bash
+# Read input (requires jq)
+INPUT=$(cat)
+ANSWER=$(echo "$INPUT" | jq -r '.candidateAnswer')
+
+HITS=()
+MISSES=()
+SCORE=1.0
+
+# Check if file exists (for file-based tasks)
+if [[ -f "$ANSWER" ]]; then
+    HITS+=("File exists")
+else
+    MISSES+=("File not found")
+    SCORE=0.0
+fi
+
+# Output JSON
+echo "{\"score\": $SCORE, \"hits\": $(printf '%s\n' "${HITS[@]}" | jq -R . | jq -s .), \"misses\": $(printf '%s\n' "${MISSES[@]}" | jq -R . | jq -s .)}"
+```
+
+## Target Proxy
+
+Code judges can invoke the target agent for advanced evaluations:
+
+```yaml
+evaluators:
+  - name: interactive_check
+    type: code_judge
+    script: ["python", "./judges/interactive.py"]
+    target:
+      max_calls: 5
+```
+
+**judges/interactive.py:**
+```python
+import json
+import sys
+from agentv_eval import create_target_client
+
+data = json.load(sys.stdin)
+target = create_target_client()
+
+# Ask follow-up questions to the agent
+response = target.invoke({
+    "question": f"Clarify this: {data['candidateAnswer']}"
+})
+
+# Evaluate the clarification
+score = 1.0 if "clear" in response.lower() else 0.5
+
+print(json.dumps({
+    "score": score,
+    "hits": ["Got clarification"],
+    "misses": []
+}))
+```
+
+## Best Practices
+
+### 1. Handle Errors Gracefully
+
+```python
+try:
+    # Evaluation logic
+    result = evaluate(data)
+except Exception as e:
+    result = {
+        "score": 0.0,
+        "hits": [],
+        "misses": [f"Evaluation error: {str(e)}"]
+    }
+
+print(json.dumps(result))
+```
+
+### 2. Use Descriptive Hits/Misses
+
+```python
+# Good
+hits.append("Response includes correct SQL syntax")
+misses.append("Missing WHERE clause for filtering")
+
+# Avoid
+hits.append("Check 1 passed")
+misses.append("Failed")
+```
+
+### 3. Include Details for Debugging
+
+```python
+print(json.dumps({
+    "score": score,
+    "hits": hits,
+    "misses": misses,
+    "details": {
+        "lines_of_code": 42,
+        "complexity_score": 3.5,
+        "test_coverage": 0.85
+    }
+}))
+```
+
+### 4. Keep Scripts Fast
+
+- Target execution time: < 5 seconds
+- Avoid network calls when possible
+- Cache expensive computations
+
+## Common Use Cases
+
+| Use Case | Example |
+|----------|---------|
+| Syntax validation | Parse code with AST |
+| Format checking | Validate JSON/YAML structure |
+| Regex matching | Check for required patterns |
+| File operations | Verify generated files |
+| Metric calculation | Count lines, complexity |
+| External validation | Call linters, formatters |
+
+## Next Steps
+
+- [LLM Judge](/evaluators/llm-judge/) - Semantic evaluation
+- [Composite](/evaluators/composite/) - Combine with other evaluators
+- [Execution Metrics](/evaluators/execution-metrics/) - Performance bounds

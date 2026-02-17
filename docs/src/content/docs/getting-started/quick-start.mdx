@@ -1,0 +1,170 @@
+---
+title: Quick Start
+description: Create your first agent evaluation in 5 minutes
+---
+
+This guide walks you through creating your first agent evaluation using the AgentEvals specification.
+
+## Prerequisites
+
+- A text editor
+- An agent to evaluate (or use the examples)
+- [AgentV](https://github.com/EntityProcess/agentv) CLI (optional, for running evals)
+
+## Step 1: Create an EVAL.yaml file
+
+Create a new file called `EVAL.yaml`:
+
+```yaml
+name: hello-world-eval
+version: "1.0"
+description: A simple evaluation to verify agent responses
+
+evalcases:
+  - id: greeting-response
+    expected_outcome: |
+      Agent responds with a friendly greeting that includes the user's name
+
+    input:
+      - role: user
+        content: "Hello, my name is Alice!"
+
+    rubrics:
+      - Includes a greeting (hello, hi, hey, etc.)
+      - Mentions the user's name "Alice"
+      - Maintains a friendly tone
+```
+
+## Step 2: Add evaluators (optional)
+
+Enhance your evaluation with explicit evaluators:
+
+```yaml
+name: hello-world-eval
+version: "1.0"
+description: A simple evaluation to verify agent responses
+
+execution:
+  evaluators:
+    - name: greeting_quality
+      type: llm_judge
+      prompt: |
+        Evaluate if the response is a proper greeting.
+
+        Input: {{input}}
+        Response: {{candidate_answer}}
+
+        Score 1.0 if the response:
+        - Contains a greeting
+        - Mentions the user's name
+        - Is friendly and appropriate
+
+        Score 0.5 if partially correct.
+        Score 0.0 if fails basic requirements.
+
+evalcases:
+  - id: greeting-response
+    expected_outcome: |
+      Agent responds with a friendly greeting that includes the user's name
+
+    input:
+      - role: user
+        content: "Hello, my name is Alice!"
+
+    expected_output:
+      - role: assistant
+        content: "Hello Alice! It's nice to meet you. How can I help you today?"
+```
+
+## Step 3: Add a code judge
+
+For deterministic checks, add a code judge:
+
+```yaml
+execution:
+  evaluators:
+    - name: name_check
+      type: code_judge
+      script: ["python", "./judges/check_name.py"]
+
+    - name: greeting_quality
+      type: llm_judge
+      prompt: ./prompts/greeting.md
+```
+
+Create `judges/check_name.py`:
+
+```python
+import json
+import sys
+
+# Read input from stdin
+data = json.load(sys.stdin)
+candidate = data["candidateAnswer"].lower()
+input_text = data["question"].lower()
+
+# Extract name from input (simple example)
+name = "alice"  # In practice, extract from input
+
+score = 1.0 if name in candidate else 0.0
+hits = ["Name mentioned"] if score > 0 else []
+misses = [] if score > 0 else ["Name not mentioned"]
+
+# Output result
+print(json.dumps({
+    "score": score,
+    "hits": hits,
+    "misses": misses
+}))
+```
+
+## Step 4: Run the evaluation
+
+Using AgentV CLI:
+
+```bash
+# Install AgentV
+bun install -g agentv
+
+# Run evaluation
+agentv eval ./EVAL.yaml --target default
+```
+
+## Step 5: Review results
+
+Results are saved as JSONL:
+
+```json
+{
+  "evalId": "greeting-response",
+  "score": 0.95,
+  "verdict": "pass",
+  "hits": ["Name mentioned", "Greeting present", "Friendly tone"],
+  "misses": [],
+  "evaluatorResults": [
+    {"name": "name_check", "score": 1.0},
+    {"name": "greeting_quality", "score": 0.9}
+  ]
+}
+```
+
+## Directory Structure
+
+A typical evaluation setup:
+
+```
+my-evals/
+├── EVAL.yaml           # Main evaluation file
+├── prompts/
+│   └── greeting.md     # LLM judge prompts
+├── judges/
+│   └── check_name.py   # Code judges
+└── fixtures/
+    └── sample.txt      # Test data
+```
+
+## Next Steps
+
+- [EVAL Format](/specification/eval-format/) - Full format specification
+- [Evaluator Types](/evaluators/code-judge/) - Learn about each evaluator
+- [Organization Patterns](/specification/organization/) - Centralized vs skill-based

@@ -1,0 +1,308 @@
+---
+title: Organization Patterns
+description: How to organize evaluation files in your project
+---
+
+AgentEvals supports multiple organizational patterns. Choose the one that fits your project structure.
+
+## Pattern 1: Centralized
+
+All evaluations in a single `evals/` directory. Best for:
+- Dedicated evaluation repositories
+- Cross-cutting evaluations
+- CI/CD integration
+
+```
+project/
+├── evals/
+│   ├── code-review/
+│   │   ├── EVAL.yaml
+│   │   ├── prompts/
+│   │   │   └── quality.md
+│   │   └── judges/
+│   │       └── syntax.py
+│   ├── document-extraction/
+│   │   ├── EVAL.yaml
+│   │   └── fixtures/
+│   │       └── sample.pdf
+│   └── rag-accuracy/
+│       ├── EVAL.yaml
+│       └── dataset.jsonl
+├── .agentv/
+│   ├── targets.yaml
+│   └── config.yaml
+└── README.md
+```
+
+## Pattern 2: Skill-Based
+
+Evaluations co-located with skills. Best for:
+- [AgentSkills](https://github.com/agentskills/agentskills) integration
+- Feature-oriented development
+- Self-contained skill packages
+
+```
+project/
+├── skills/
+│   ├── code-review/
+│   │   ├── SKILL.md              # Skill definition
+│   │   ├── evals/
+│   │   │   ├── EVAL.yaml
+│   │   │   └── prompts/
+│   │   │       └── quality.md
+│   │   └── scripts/
+│   │       └── review.py
+│   ├── document-extraction/
+│   │   ├── SKILL.md
+│   │   └── evals/
+│   │       └── EVAL.yaml
+│   └── rag-search/
+│       ├── SKILL.md
+│       └── evals/
+│           └── EVAL.yaml
+└── .agentv/
+    └── config.yaml
+```
+
+## Pattern 3: Domain-Grouped
+
+Evaluations organized by domain or capability area. Best for:
+- Large projects with many capabilities
+- Team-based organization
+- Multiple evaluation types per domain
+
+```
+project/
+├── domains/
+│   ├── coding/
+│   │   ├── evals/
+│   │   │   ├── review.yaml
+│   │   │   ├── generation.yaml
+│   │   │   └── debugging.yaml
+│   │   └── shared/
+│   │       └── prompts/
+│   ├── retrieval/
+│   │   ├── evals/
+│   │   │   ├── rag-accuracy.yaml
+│   │   │   └── search-quality.yaml
+│   │   └── fixtures/
+│   └── conversation/
+│       └── evals/
+│           ├── multi-turn.yaml
+│           └── context-retention.yaml
+└── .agentv/
+    └── config.yaml
+```
+
+## Linking Skills and Evals
+
+Use the `metadata.skill` field to link evaluations to skills:
+
+**Skill-based (co-located):**
+```yaml
+# skills/code-review/evals/EVAL.yaml
+name: code-review-eval
+metadata:
+  skill: code-review    # References parent skill
+```
+
+**Centralized (reference):**
+```yaml
+# evals/code-review/EVAL.yaml
+name: code-review-eval
+metadata:
+  skill: code-review    # References skill elsewhere
+  skill_path: ../skills/code-review
+```
+
+## Shared Resources
+
+### Shared Prompts
+
+Create a shared prompts directory:
+
+```
+project/
+├── shared/
+│   └── prompts/
+│       ├── safety.md
+│       ├── quality.md
+│       └── format.md
+└── evals/
+    └── code-review/
+        └── EVAL.yaml
+```
+
+Reference with absolute paths:
+
+```yaml
+# evals/code-review/EVAL.yaml
+execution:
+  evaluators:
+    - name: safety
+      type: llm_judge
+      prompt: /shared/prompts/safety.md
+```
+
+### Shared Judges
+
+Create reusable code judges:
+
+```
+project/
+├── shared/
+│   └── judges/
+│       ├── json_validator.py
+│       ├── format_checker.py
+│       └── requirements.txt
+└── evals/
+```
+
+Reference in evaluators:
+
+```yaml
+evaluators:
+  - name: format
+    type: code_judge
+    script: ["python", "/shared/judges/format_checker.py"]
+```
+
+## Configuration Files
+
+### .agentv/config.yaml
+
+Project-wide configuration:
+
+```yaml
+# .agentv/config.yaml
+eval_patterns:
+  - "evals/**/EVAL.yaml"
+  - "skills/**/evals/EVAL.yaml"
+
+defaults:
+  timeout_seconds: 300
+  target: default
+```
+
+### .agentv/targets.yaml
+
+Provider configuration:
+
+```yaml
+# .agentv/targets.yaml
+targets:
+  - name: default
+    provider: anthropic
+    model: claude-sonnet-4-20250514
+
+  - name: powerful
+    provider: anthropic
+    model: claude-opus-4-20250514
+
+  - name: fast
+    provider: anthropic
+    model: claude-3-5-haiku-20241022
+```
+
+## Discovery
+
+AgentEvals tools discover evaluations by pattern:
+
+```bash
+# Find all evaluations
+agentv list
+
+# Run specific patterns
+agentv eval "evals/code-*/**"
+agentv eval "skills/*/evals/**"
+```
+
+## Naming Conventions
+
+### Eval Files
+
+| Pattern | Description |
+|---------|-------------|
+| `EVAL.yaml` | Primary evaluation file |
+| `dataset.yaml` | Alternative name (agentv style) |
+| `*.eval.yaml` | Scoped evaluations |
+
+### Directories
+
+| Directory | Purpose |
+|-----------|---------|
+| `prompts/` | LLM judge prompts |
+| `judges/` | Code judge scripts |
+| `fixtures/` | Test data and samples |
+| `references/` | Reference documents |
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `*.md` | Prompt templates |
+| `*.py` | Python code judges |
+| `*.ts` | TypeScript code judges |
+| `*.jsonl` | Large datasets |
+
+## Migration
+
+### From Centralized to Skill-Based
+
+1. Create skill directories
+2. Move eval files to `skills/*/evals/`
+3. Update relative paths in EVAL.yaml
+4. Add `metadata.skill` references
+
+### From Custom to Standard
+
+1. Rename evaluation files to `EVAL.yaml`
+2. Convert to YAML format if needed
+3. Map custom fields to standard schema
+4. Update tooling configuration
+
+## Best Practices
+
+### 1. Keep Related Files Together
+
+```
+evals/code-review/
+├── EVAL.yaml
+├── prompts/
+│   └── quality.md      # Used by this eval
+└── judges/
+    └── syntax.py       # Used by this eval
+```
+
+### 2. Use Descriptive Names
+
+```yaml
+# Good
+name: code-review-security-vulnerabilities
+
+# Avoid
+name: cr-sec-1
+```
+
+### 3. Document Structure
+
+Add a README in evaluation directories:
+
+```
+evals/
+├── README.md           # Explains evaluation organization
+├── code-review/
+│   └── README.md       # Explains this evaluation suite
+```
+
+### 4. Version Control Friendly
+
+- Use YAML over JSON for better diffs
+- Keep files small and focused
+- Split large datasets into JSONL
+
+## Next Steps
+
+- [EVAL Format](/specification/eval-format/) - File format reference
+- [Integration](/integration/targets/) - Target configuration
+- [Patterns](/patterns/testing-pyramid/) - Testing patterns

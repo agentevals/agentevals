@@ -1,0 +1,72 @@
+---
+title: AgentEvals
+description: Industry-standard evaluation specifications for AI agents
+template: splash
+hero:
+  tagline: ""
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Why Agent Evals?
+
+<CardGrid>
+  <Card title="Declarative Format" icon="document">
+    Define evaluations in simple YAML files. No complex code required.
+  </Card>
+  <Card title="7 Evaluator Types" icon="list-format">
+    Code judges, LLM judges, rubrics, composites, tool trajectory, and more.
+  </Card>
+  <Card title="Flexible Organization" icon="setting">
+    Centralized or skill-based patterns - your choice.
+  </Card>
+  <Card title="Industry Standard" icon="star">
+    Based on production implementations. Built for adoption.
+  </Card>
+</CardGrid>
+
+## Quick Example
+
+```yaml
+# EVAL.yaml
+name: code-review
+version: "1.0"
+
+execution:
+  evaluators:
+    - name: quality
+      type: llm_judge
+      prompt: ./prompts/quality.md
+
+evalcases:
+  - id: detect-bug
+    expected_outcome: Identifies the loop condition bug
+    input:
+      - role: user
+        content: "Review this code..."
+    rubrics:
+      - Identifies the bug
+      - Provides correct fix
+```
+
+## Evaluator Types
+
+| Type | Description |
+|------|-------------|
+| `code_judge` | Execute custom scripts for deterministic checks |
+| `llm_judge` | LLM-based semantic evaluation |
+| `rubric` | Structured criteria with weights |
+| `composite` | Combine multiple evaluators |
+| `tool_trajectory` | Validate agent tool usage |
+| `field_accuracy` | Check structured data fields |
+| `execution_metrics` | Latency, cost, token limits |
+
+## Canonical Implementation
+
+[**AgentV**](https://github.com/EntityProcess/agentv) is the canonical implementation of the AgentEvals standard, providing CLI tools for running evaluations.
+
+---
+
+<p style="text-align: center; color: var(--sl-color-gray-3); font-size: 0.875rem;">
+  AgentEvals is an open specification. Contributions welcome on <a href="https://github.com/agentevals/agentevals">GitHub</a>.
+</p>

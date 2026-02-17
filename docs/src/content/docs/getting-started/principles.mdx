@@ -1,0 +1,229 @@
+---
+title: Agent-Native Principles
+description: Design principles for effective agent evaluations
+---
+
+AgentEvals is built on **agent-native architecture** principles. These principles guide how evaluations should be designed for maximum effectiveness.
+
+## The Five Principles
+
+### 1. Parity
+
+> Whatever the user can do through the UI, the agent should be able to achieve through tools - and evals should verify this.
+
+**For Evaluations:**
+- Test the full range of agent capabilities
+- Don't test artificial scenarios that don't occur in production
+- Ensure eval inputs mirror real user requests
+
+**Example:**
+```yaml
+# Good: Tests real-world scenario
+- id: file-rename
+  expected_outcome: Agent renames file correctly
+  input:
+    - role: user
+      content: "Rename config.json to settings.json"
+
+# Avoid: Artificial constraint
+- id: file-rename-limited
+  expected_outcome: Agent explains it cannot rename files
+  # Testing capability that should exist
+```
+
+### 2. Granularity
+
+> Prefer atomic primitives over workflow-bundled tools.
+
+**For Evaluations:**
+- Create atomic evaluators that test one thing well
+- Compose complex evaluations from simple parts
+- Avoid monolithic evaluators that test everything at once
+
+**Example:**
+```yaml
+# Good: Atomic evaluators
+execution:
+  evaluators:
+    - name: syntax
+      type: code_judge
+      script: ["python", "./judges/syntax.py"]
+
+    - name: correctness
+      type: llm_judge
+      prompt: ./prompts/correctness.md
+
+    - name: efficiency
+      type: execution_metrics
+      max_tool_calls: 10
+
+# Avoid: Monolithic evaluator
+execution:
+  evaluators:
+    - name: everything
+      type: code_judge
+      script: ["python", "./judges/check_all.py"]  # 500 lines
+```
+
+### 3. Composability
+
+> With atomic tools and parity maintained, developers can create new features by writing prompts alone.
+
+**For Evaluations:**
+- Use composite evaluators to combine atomic ones
+- Define reusable evaluator configurations
+- Build evaluation libraries for your domain
+
+**Example:**
+```yaml
+execution:
+  evaluators:
+    # Composite: Combines safety and quality
+    - name: release_gate
+      type: composite
+      evaluators:
+        - name: safety
+          type: llm_judge
+          prompt: ./prompts/safety.md
+        - name: quality
+          type: llm_judge
+          prompt: ./prompts/quality.md
+      aggregator:
+        type: safety_gate
+        required: [safety]
+```
+
+### 4. Emergent Capability
+
+> Agents accomplish unanticipated tasks by composing existing tools creatively.
+
+**For Evaluations:**
+- Test novel combinations of capabilities
+- Don't over-constrain expected solutions
+- Allow for valid alternative approaches
+
+**Example:**
+```yaml
+- id: summarize-and-translate
+  expected_outcome: |
+    Agent summarizes the document and translates to Spanish.
+    May accomplish this in any order or combine steps.
+
+  # Use tool_trajectory with any_order mode
+  execution:
+    evaluators:
+      - name: workflow
+        type: tool_trajectory
+        mode: any_order
+        minimums:
+          summarize: 1
+          translate: 1
+```
+
+### 5. Improvement Over Time
+
+> Applications improve through accumulated context and prompt refinement without shipping code changes.
+
+**For Evaluations:**
+- Version your evaluations alongside prompts
+- Track eval results over time
+- Use evals to measure prompt improvements
+
+**Example:**
+```yaml
+name: code-review
+version: "2.1"  # Track eval version
+description: |
+  Evaluates code review capabilities.
+  v2.1: Added security focus rubrics
+
+metadata:
+  prompt_version: "3.0"
+  baseline_score: 0.75
+  target_score: 0.85
+```
+
+## The Testing Pyramid
+
+AgentEvals fits into the broader testing pyramid for AI agents:
+
+```
+        Simulations (end-to-end scenarios)
+              ↑
+        Evals (this spec)
+              ↑
+        Unit Tests (deterministic code)
+```
+
+### Unit Tests
+- Test deterministic components
+- Fast, reliable, foundational
+- Example: Tool implementations, parsers
+
+### Evals (AgentEvals)
+- Measure probabilistic agent behavior
+- Balance coverage and cost
+- Example: Task completion, response quality
+
+### Simulations
+- End-to-end scenario testing
+- Multi-turn conversations
+- Example: Full user workflows
+
+## Anti-Patterns to Avoid
+
+### Context Starvation
+Don't test agents without the context they'd have in production.
+
+```yaml
+# Bad: No system prompt context
+- id: code-review
+  input:
+    - role: user
+      content: "Review this code"
+
+# Good: Include system context
+- id: code-review
+  input:
+    - role: system
+      content: "You are an expert code reviewer..."
+    - role: user
+      content: "Review this code"
+```
+
+### Over-Specification
+Don't require exact outputs when semantic equivalence is acceptable.
+
+```yaml
+# Bad: Requires exact match
+expected_output:
+  - role: assistant
+    content: "The answer is 42."
+
+# Good: Allows variation
+rubrics:
+  - Contains the correct answer (42)
+  - Provides clear explanation
+```
+
+### Ignoring Tool Usage
+For agentic tasks, evaluate tool usage, not just final output.
+
+```yaml
+# Good: Evaluates the journey, not just destination
+execution:
+  evaluators:
+    - name: tool_usage
+      type: tool_trajectory
+      mode: in_order
+      expected:
+        - tool: search
+        - tool: analyze
+        - tool: respond
+```
+
+## Next Steps
+
+- [EVAL Format](/specification/eval-format/) - Apply principles in practice
+- [Composite Evaluator](/evaluators/composite/) - Build complex evaluations
+- [Tool Trajectory](/evaluators/tool-trajectory/) - Evaluate agent behavior

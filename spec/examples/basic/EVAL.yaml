@@ -1,0 +1,50 @@
+# Basic AgentEvals Example
+# A minimal evaluation file demonstrating core concepts
+
+name: hello-world
+version: "1.0"
+description: A simple greeting evaluation
+
+metadata:
+  author: agentevals
+  tags: [example, basic]
+
+evalcases:
+  - id: simple-greeting
+    expected_outcome: Agent responds with a friendly greeting
+
+    input: "Hello!"
+
+    rubrics:
+      - Contains a greeting word (hello, hi, hey)
+      - Maintains friendly and polite tone
+
+  - id: personalized-greeting
+    expected_outcome: Agent greets the user by name
+
+    input:
+      - role: user
+        content: "Hello, my name is Alice!"
+
+    expected_output:
+      - role: assistant
+        content: "Hello Alice! It's nice to meet you."
+
+    rubrics:
+      - Includes the user's name "Alice"
+      - Contains a greeting
+      - Sounds natural and friendly
+
+  - id: greeting-with-context
+    expected_outcome: Agent responds appropriately based on system context
+
+    input:
+      - role: system
+        content: You are a friendly customer service agent.
+      - role: user
+        content: "Hi there!"
+
+    rubrics:
+      - Maintains customer service tone
+      - Offers to help
+      - Professional yet friendly

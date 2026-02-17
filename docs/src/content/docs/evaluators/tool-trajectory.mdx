@@ -1,0 +1,352 @@
+---
+title: Tool Trajectory
+description: Validate agent tool usage patterns and sequences
+---
+
+The `tool_trajectory` evaluator validates how agents use tools during task execution. Use it for agentic workflows where the journey matters, not just the destination.
+
+## Configuration
+
+```yaml
+evaluators:
+  - name: workflow
+    type: tool_trajectory
+    mode: in_order
+    expected:
+      - tool: search
+      - tool: analyze
+      - tool: respond
+```
+
+### Properties
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `mode` | `string` | No | Matching mode (default: any_order) |
+| `expected` | `ExpectedToolCall[]` | No | Expected tool calls |
+| `minimums` | `object` | No | Minimum call counts per tool |
+
+### Modes
+
+| Mode | Description |
+|------|-------------|
+| `any_order` | Tools must be called, order doesn't matter |
+| `in_order` | Tools must be called in specified sequence |
+| `exact` | Tools must match exactly (order and count) |
+
+## Expected Tool Call Schema
+
+```yaml
+expected:
+  - tool: string              # Tool name (required)
+    args: object | "any"      # Expected arguments
+    max_duration_ms: number   # Maximum execution time
+```
+
+## Examples
+
+### Any Order Mode
+
+Tools must be called at least once, in any order:
+
+```yaml
+evaluators:
+  - name: required_tools
+    type: tool_trajectory
+    mode: any_order
+    expected:
+      - tool: search
+      - tool: read_document
+      - tool: summarize
+```
+
+**Passes:**
+- search → read_document → summarize ✓
+- read_document → search → summarize ✓
+- search → search → read_document → summarize ✓
+
+**Fails:**
+- search → summarize (missing read_document) ✗
+
+### In Order Mode
+
+Tools must be called in the specified sequence:
+
+```yaml
+evaluators:
+  - name: workflow_order
+    type: tool_trajectory
+    mode: in_order
+    expected:
+      - tool: fetch_data
+      - tool: process
+      - tool: save
+```
+
+**Passes:**
+- fetch_data → process → save ✓
+- fetch_data → log → process → save (extra tools ok) ✓
+
+**Fails:**
+- process → fetch_data → save (wrong order) ✗
+- fetch_data → save (missing process) ✗
+
+### Exact Mode
+
+Tools must match exactly in order and count:
+
+```yaml
+evaluators:
+  - name: exact_workflow
+    type: tool_trajectory
+    mode: exact
+    expected:
+      - tool: init
+      - tool: process
+      - tool: cleanup
+```
+
+**Passes:**
+- init → process → cleanup ✓
+
+**Fails:**
+- init → process → process → cleanup (extra call) ✗
+- init → log → process → cleanup (unexpected tool) ✗
+
+### Minimum Counts
+
+Require minimum number of calls per tool:
+
+```yaml
+evaluators:
+  - name: thorough_research
+    type: tool_trajectory
+    mode: any_order
+    minimums:
+      search: 2          # At least 2 searches
+      read_document: 3   # Read at least 3 documents
+```
+
+### Argument Validation
+
+Check tool arguments:
+
+```yaml
+evaluators:
+  - name: correct_args
+    type: tool_trajectory
+    mode: in_order
+    expected:
+      - tool: search
+        args:
+          query: "Python programming"
+
+      - tool: filter
+        args:
+          category: "tutorial"
+          limit: 10
+
+      - tool: summarize
+        args: any  # Skip argument validation
+```
+
+### Duration Limits
+
+Set maximum execution time per tool:
+
+```yaml
+evaluators:
+  - name: efficient_workflow
+    type: tool_trajectory
+    mode: any_order
+    expected:
+      - tool: search
+        max_duration_ms: 2000
+
+      - tool: process
+        max_duration_ms: 5000
+```
+
+## Complete Example
+
+```yaml
+name: research-workflow-eval
+version: "1.0"
+description: Evaluates research agent workflow
+
+execution:
+  evaluators:
+    # Check workflow follows expected pattern
+    - name: workflow_pattern
+      type: tool_trajectory
+      mode: in_order
+      expected:
+        - tool: search
+        - tool: read_document
+        - tool: synthesize
+
+    # Ensure thorough research
+    - name: research_depth
+      type: tool_trajectory
+      mode: any_order
+      minimums:
+        search: 1
+        read_document: 2
+
+    # Check efficiency
+    - name: efficiency
+      type: execution_metrics
+      max_tool_calls: 10
+      max_duration_ms: 30000
+
+evalcases:
+  - id: research-python
+    expected_outcome: |
+      Agent searches for Python information, reads multiple sources,
+      and synthesizes a comprehensive answer.
+
+    input:
+      - role: system
+        content: |
+          You are a research assistant with tools:
+          - search(query): Search for documents
+          - read_document(id): Read a document
+          - synthesize(content): Create summary
+      - role: user
+        content: "Research the history of Python programming language"
+```
+
+## Trace Summary Access
+
+Tool trajectory evaluators have access to trace data:
+
+```json
+{
+  "traceSummary": {
+    "eventCount": 5,
+    "toolNames": ["search", "read_document", "read_document", "synthesize"],
+    "costUsd": 0.02,
+    "durationMs": 4500
+  }
+}
+```
+
+## Combining with Other Evaluators
+
+### With LLM Judge
+
+```yaml
+execution:
+  evaluators:
+    - name: tool_usage
+      type: tool_trajectory
+      mode: in_order
+      expected:
+        - tool: search
+        - tool: analyze
+
+    - name: output_quality
+      type: llm_judge
+      prompt: |
+        Evaluate the quality of the research output.
+        Did the agent use search and analysis effectively?
+
+        Output: {{candidate_answer}}
+        Tools used: {{output_messages}}
+```
+
+### In Composite
+
+```yaml
+execution:
+  evaluators:
+    - name: agent_eval
+      type: composite
+      evaluators:
+        - name: correct_tools
+          type: tool_trajectory
+          mode: any_order
+          minimums:
+            search: 1
+
+        - name: correct_output
+          type: llm_judge
+          prompt: ./prompts/quality.md
+
+      aggregator:
+        type: weighted_average
+        weights:
+          correct_tools: 0.4
+          correct_output: 0.6
+```
+
+## Scoring
+
+Tool trajectory scoring:
+
+| Outcome | Score |
+|---------|-------|
+| All expected tools called (correct order if applicable) | 1.0 |
+| Missing some expected tools | Proportional |
+| Wrong order (in_order mode) | 0.0 |
+| Exceeds duration limits | Penalty |
+
+**Proportional scoring:**
+```
+Score = tools_matched / tools_expected
+```
+
+## Best Practices
+
+### 1. Use any_order for Flexible Workflows
+
+```yaml
+mode: any_order  # Agent can find own path
+minimums:
+  required_tool: 1
+```
+
+### 2. Use in_order for Critical Sequences
+
+```yaml
+mode: in_order
+expected:
+  - tool: validate_input  # Must happen first
+  - tool: process
+  - tool: save            # Must happen last
+```
+
+### 3. Combine with Execution Metrics
+
+```yaml
+evaluators:
+  - name: tools
+    type: tool_trajectory
+    mode: any_order
+    minimums:
+      search: 1
+
+  - name: performance
+    type: execution_metrics
+    max_tool_calls: 10  # Prevent over-calling
+```
+
+### 4. Document Tool Expectations
+
+```yaml
+evalcases:
+  - id: research
+    expected_outcome: |
+      Agent should:
+      1. Search for relevant information
+      2. Read at least 2 documents
+      3. Synthesize findings
+
+      Tool sequence: search → read(2+) → synthesize
+```
+
+## Next Steps
+
+- [Execution Metrics](/evaluators/execution-metrics/) - Performance bounds
+- [Composite](/evaluators/composite/) - Combine evaluators
+- [Patterns](/patterns/testing-pyramid/) - Testing patterns

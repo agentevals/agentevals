@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+/* AgentEvals Custom Theme */
+:root {
+  /* Primary accent - Indigo */
+  --sl-color-accent: 99 102 241;
+  --sl-color-accent-low: 30 27 75;
+  --sl-color-accent-high: 199 210 254;
+
+  /* Text colors for dark mode */
+  --sl-color-white: 255 255 255;
+  --sl-color-gray-1: 226 232 240;
+  --sl-color-gray-2: 148 163 184;
+  --sl-color-gray-3: 100 116 139;
+  --sl-color-gray-4: 71 85 105;
+  --sl-color-gray-5: 51 65 85;
+  --sl-color-gray-6: 30 41 59;
+  --sl-color-black: 15 23 42;
+}
+
+/* Force dark mode */
+[data-theme='light'] {
+  --sl-color-accent: 99 102 241;
+  --sl-color-accent-low: 238 242 255;
+  --sl-color-accent-high: 79 70 229;
+}
+
+/* Hide theme toggle - dark mode only */
+starlight-theme-select {
+  display: none;
+}
+
+/* Fixed header with blur background */
+header.header {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(10, 15, 30, 0.95) !important;
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+/* Ensure content doesn't hide under fixed header */
+.main-frame {
+  padding-top: 0;
+}
+
+/* Make sure the site title in header is visible */
+.site-title {
+  color: rgb(var(--sl-color-white)) !important;
+}
+
+/* Search button styling for better visibility */
+site-search button {
+  background: rgba(30, 41, 59, 0.8) !important;
+  border: 1px solid rgba(99, 102, 241, 0.2) !important;
+}
+
+/* Custom hero styling for landing page */
+.hero-home {
+  margin: 0 calc(-50vw + 50%);
+  padding: 4rem calc(50vw - 50%);
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.1) 0%,
+    rgba(15, 23, 42, 0) 50%
+  );
+}
+
+/* Code block styling */
+.expressive-code pre {
+  border-radius: 0.5rem;
+}
+
+/* Sidebar improvements */
+.sidebar-content {
+  padding-bottom: 2rem;
+}

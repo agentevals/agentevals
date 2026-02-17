@@ -1,0 +1,290 @@
+---
+title: Targets
+description: Configure evaluation targets and providers
+---
+
+Targets abstract the connection between evaluations and agent implementations. They allow the same EVAL.yaml to run against different agents, models, or environments.
+
+## Target Configuration
+
+### targets.yaml
+
+```yaml
+# .agentv/targets.yaml
+targets:
+  - name: default
+    provider: anthropic
+    model: claude-sonnet-4-20250514
+    judge_target: default
+
+  - name: powerful
+    provider: anthropic
+    model: claude-opus-4-20250514
+    judge_target: default
+
+  - name: fast
+    provider: anthropic
+    model: claude-3-5-haiku-20241022
+    judge_target: powerful  # Use better model for judging
+
+  - name: azure
+    provider: azure
+    endpoint: ${{ AZURE_OPENAI_ENDPOINT }}
+    api_key: ${{ AZURE_OPENAI_API_KEY }}
+    deployment: ${{ AZURE_DEPLOYMENT_NAME }}
+    judge_target: azure
+```
+
+## Target Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `string` | Unique target identifier |
+| `provider` | `string` | Provider type |
+| `judge_target` | `string` | Target for LLM judges (optional) |
+| `model` | `string` | Model name (provider-specific) |
+| `endpoint` | `string` | API endpoint (if applicable) |
+| `api_key` | `string` | API key (use env vars) |
+
+## Providers
+
+### anthropic
+
+```yaml
+- name: claude
+  provider: anthropic
+  model: claude-sonnet-4-20250514
+  # Uses ANTHROPIC_API_KEY env var
+```
+
+### azure
+
+```yaml
+- name: azure_prod
+  provider: azure
+  endpoint: ${{ AZURE_OPENAI_ENDPOINT }}
+  api_key: ${{ AZURE_OPENAI_API_KEY }}
+  deployment: gpt-4o
+  api_version: "2024-02-15-preview"
+```
+
+### openai
+
+```yaml
+- name: openai
+  provider: openai
+  model: gpt-4o
+  # Uses OPENAI_API_KEY env var
+```
+
+### cli
+
+Execute a local CLI command:
+
+```yaml
+- name: local_agent
+  provider: cli
+  command: ["python", "./my_agent.py"]
+  cwd: /path/to/agent
+```
+
+### vscode
+
+Test VS Code extensions:
+
+```yaml
+- name: vscode_test
+  provider: vscode
+  workspace_template: ${{ WORKSPACE_PATH }}
+  judge_target: azure
+```
+
+### mock
+
+For testing without LLM calls:
+
+```yaml
+- name: mock
+  provider: mock
+  responses:
+    - pattern: "hello"
+      response: "Hi there!"
+    - pattern: ".*"
+      response: "I don't understand."
+```
+
+## Using Targets
+
+### Default Target
+
+```yaml
+# EVAL.yaml
+execution:
+  target: default  # Uses "default" from targets.yaml
+```
+
+### Per-Evalcase Override
+
+```yaml
+evalcases:
+  - id: complex-task
+    execution:
+      target: powerful  # Override for this case
+```
+
+### Judge Target
+
+Use a different model for evaluation:
+
+```yaml
+execution:
+  target: fast  # Agent uses fast model
+  evaluators:
+    - name: quality
+      type: llm_judge
+      prompt: ./prompts/quality.md
+      target: powerful  # Judge uses powerful model
+```
+
+## Environment Variables
+
+### Variable Syntax
+
+```yaml
+endpoint: ${{ AZURE_ENDPOINT }}  # Required
+api_key: ${{ API_KEY }}          # From .env or environment
+```
+
+### .env File
+
+```bash
+# .env
+AZURE_ENDPOINT=https://my-resource.openai.azure.com
+AZURE_API_KEY=sk-...
+AZURE_DEPLOYMENT=gpt-4o
+```
+
+## Target Resolution
+
+1. Check evalcase `execution.target`
+2. Fall back to file-level `execution.target`
+3. Fall back to `default` target
+4. Error if no matching target found
+
+```yaml
+# Resolution order
+evalcases:
+  - id: case-1
+    execution:
+      target: special    # 1. Uses "special"
+
+  - id: case-2           # 2. Uses file-level "fast"
+
+execution:
+  target: fast           # File-level default
+```
+
+## Multiple Environments
+
+### Development vs Production
+
+```yaml
+# targets.yaml
+targets:
+  - name: dev
+    provider: anthropic
+    model: claude-3-5-haiku-20241022
+
+  - name: prod
+    provider: anthropic
+    model: claude-sonnet-4-20250514
+```
+
+Run with specific target:
+```bash
+agentv eval ./EVAL.yaml --target prod
+```
+
+### A/B Testing
+
+```yaml
+targets:
+  - name: variant_a
+    provider: anthropic
+    model: claude-sonnet-4-20250514
+    config:
+      temperature: 0.0
+
+  - name: variant_b
+    provider: anthropic
+    model: claude-sonnet-4-20250514
+    config:
+      temperature: 0.3
+```
+
+## Best Practices
+
+### 1. Use Descriptive Names
+
+```yaml
+# Good
+- name: production_claude
+- name: development_haiku
+- name: cost_optimized
+
+# Avoid
+- name: t1
+- name: model
+```
+
+### 2. Secure API Keys
+
+```yaml
+# Good: Use environment variables
+api_key: ${{ AZURE_API_KEY }}
+
+# Avoid: Hardcoded keys
+api_key: sk-12345...
+```
+
+### 3. Separate Judge Targets
+
+```yaml
+- name: fast_agent
+  provider: anthropic
+  model: claude-3-5-haiku-20241022
+  judge_target: powerful_judge  # Better model for judging
+
+- name: powerful_judge
+  provider: anthropic
+  model: claude-sonnet-4-20250514
+```
+
+### 4. Version Control
+
+Keep `targets.yaml` in version control with template values:
+
+```yaml
+# targets.yaml (committed)
+targets:
+  - name: azure
+    provider: azure
+    endpoint: ${{ AZURE_ENDPOINT }}
+    api_key: ${{ AZURE_API_KEY }}
+```
+
+### 5. Document Requirements
+
+```yaml
+# .agentv/README.md
+Required environment variables:
+- AZURE_ENDPOINT: Azure OpenAI endpoint
+- AZURE_API_KEY: Azure OpenAI API key
+- AZURE_DEPLOYMENT: Deployment name
+```
+
+## Next Steps
+
+- [Results](/integration/results/) - Result format
+- [EVAL Format](/specification/eval-format/) - Evaluation definition
+- [Organization](/specification/organization/) - File structure

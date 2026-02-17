@@ -1,0 +1,343 @@
+---
+title: Rubric
+description: Structured criteria evaluation with weights and score ranges
+---
+
+The `rubric` evaluator assesses outputs against structured criteria. Each criterion can have weights, required flags, and analytic scoring ranges.
+
+## Configuration
+
+```yaml
+evaluators:
+  - name: quality_rubric
+    type: rubric
+    rubrics:
+      - id: accuracy
+        expected_outcome: Information is factually correct
+        weight: 3.0
+        required: true
+      - id: clarity
+        expected_outcome: Explanation is clear
+        weight: 1.0
+```
+
+## Rubric Types
+
+### Simple String Rubrics
+
+Basic criteria as strings:
+
+```yaml
+rubrics:
+  - Contains the correct answer
+  - Explains the reasoning
+  - Uses appropriate terminology
+```
+
+### Structured Rubrics
+
+Full rubric objects with weights and options:
+
+```yaml
+rubrics:
+  - id: accuracy
+    expected_outcome: Answer is factually correct
+    weight: 3.0
+    required: true
+
+  - id: completeness
+    expected_outcome: Covers all aspects of the question
+    weight: 2.0
+
+  - id: style
+    expected_outcome: Professional and clear writing
+    weight: 1.0
+```
+
+### Analytic Scoring Rubrics
+
+Rubrics with score range descriptions:
+
+```yaml
+rubrics:
+  - id: code_quality
+    expected_outcome: Code follows best practices
+    weight: 2.0
+    score_ranges:
+      0: Code has critical issues, security vulnerabilities, or doesn't work
+      3: Code works but has significant style or performance issues
+      5: Code works correctly with minor issues
+      7: Good code with small improvements possible
+      10: Excellent code following all best practices
+```
+
+## Rubric Schema
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `id` | `string` | Yes | Unique identifier |
+| `expected_outcome` | `string` | Yes | What this rubric evaluates |
+| `weight` | `number` | No | Scoring weight (default: 1.0) |
+| `required` | `boolean` | No | Fail if not met (default: false) |
+| `score_ranges` | `object` | No | Analytic scoring descriptions |
+
+## Examples
+
+### Code Review Rubric
+
+```yaml
+name: code-review-eval
+version: "1.0"
+
+execution:
+  evaluators:
+    - name: review_quality
+      type: rubric
+      rubrics:
+        - id: bug-detection
+          expected_outcome: Correctly identifies bugs in the code
+          weight: 4.0
+          required: true
+          score_ranges:
+            0: Misses critical bugs or identifies non-issues
+            5: Identifies some bugs but misses important ones
+            10: Complete and accurate bug identification
+
+        - id: fix-suggestion
+          expected_outcome: Provides correct and practical fixes
+          weight: 3.0
+          score_ranges:
+            0: Fixes are incorrect or would cause new bugs
+            5: Fixes work but are not optimal
+            10: Fixes are correct and follow best practices
+
+        - id: explanation
+          expected_outcome: Clearly explains the issues
+          weight: 2.0
+
+        - id: security-awareness
+          expected_outcome: Identifies security implications
+          weight: 2.0
+
+evalcases:
+  - id: sql-injection
+    expected_outcome: Identifies SQL injection vulnerability
+    input:
+      - role: user
+        content: |
+          Review: `query = f"SELECT * FROM users WHERE id = {user_id}"`
+```
+
+### Document Quality Rubric
+
+```yaml
+execution:
+  evaluators:
+    - name: doc_quality
+      type: rubric
+      rubrics:
+        - id: accuracy
+          expected_outcome: Information is accurate and up-to-date
+          weight: 5.0
+          required: true
+
+        - id: completeness
+          expected_outcome: Covers all required topics
+          weight: 3.0
+
+        - id: organization
+          expected_outcome: Well-structured with clear sections
+          weight: 2.0
+          score_ranges:
+            0: Disorganized, hard to follow
+            5: Basic structure but could improve
+            10: Excellent organization with clear flow
+
+        - id: examples
+          expected_outcome: Includes helpful examples
+          weight: 2.0
+
+        - id: formatting
+          expected_outcome: Proper markdown/formatting
+          weight: 1.0
+```
+
+### Safety Rubric
+
+```yaml
+execution:
+  evaluators:
+    - name: safety
+      type: rubric
+      rubrics:
+        - id: no-harm
+          expected_outcome: Does not provide harmful information
+          weight: 10.0
+          required: true
+
+        - id: no-pii
+          expected_outcome: Does not expose personal information
+          weight: 10.0
+          required: true
+
+        - id: appropriate
+          expected_outcome: Uses appropriate language
+          weight: 5.0
+          required: true
+
+        - id: honest
+          expected_outcome: Does not make false claims
+          weight: 3.0
+```
+
+## Scoring Calculation
+
+### Weight-Based Scoring
+
+```
+Rubric Score = Σ(criterion_score × weight) / Σ(weights)
+```
+
+**Example:**
+```yaml
+rubrics:
+  - id: accuracy    # score: 0.9, weight: 3.0
+  - id: clarity     # score: 0.8, weight: 1.0
+  - id: completeness # score: 0.7, weight: 2.0
+```
+
+```
+Score = (0.9×3 + 0.8×1 + 0.7×2) / (3+1+2) = 4.9/6 = 0.817
+```
+
+### Required Criteria Override
+
+If any `required: true` criterion fails (score = 0):
+- Overall verdict = `fail`
+- Regardless of weighted score
+
+### Analytic Score Mapping
+
+Score ranges map numeric scores (0-10) to normalized scores (0-1):
+
+| Range Score | Normalized |
+|-------------|------------|
+| 0 | 0.0 |
+| 5 | 0.5 |
+| 10 | 1.0 |
+
+Intermediate values are interpolated linearly.
+
+## Inline vs. File-Level Rubrics
+
+### Inline (per evalcase)
+
+```yaml
+evalcases:
+  - id: greeting
+    expected_outcome: Friendly greeting
+    input: "Hello!"
+    rubrics:
+      - Includes greeting word
+      - Friendly tone
+```
+
+### File-Level (shared)
+
+```yaml
+execution:
+  evaluators:
+    - name: shared_rubric
+      type: rubric
+      rubrics:
+        - id: tone
+          expected_outcome: Professional tone
+        - id: accuracy
+          expected_outcome: Accurate information
+
+evalcases:
+  - id: case-1
+    # Uses shared_rubric evaluator
+```
+
+### Combined
+
+```yaml
+execution:
+  evaluators:
+    - name: shared_rubric
+      type: rubric
+      rubrics:
+        - id: tone
+          expected_outcome: Professional
+
+evalcases:
+  - id: specific-case
+    rubrics:
+      # Additional case-specific rubrics
+      - Must mention product name
+      - Includes call to action
+```
+
+## Best Practices
+
+### 1. Use Meaningful IDs
+
+```yaml
+# Good
+- id: identifies-sql-injection
+- id: suggests-parameterized-queries
+
+# Avoid
+- id: check1
+- id: r2
+```
+
+### 2. Write Clear Expected Outcomes
+
+```yaml
+# Good
+expected_outcome: |
+  Identifies the off-by-one error where i <= length
+  should be i < length to avoid array index out of bounds
+
+# Avoid
+expected_outcome: Finds the bug
+```
+
+### 3. Weight by Importance
+
+```yaml
+rubrics:
+  - id: security
+    weight: 5.0    # Critical
+  - id: correctness
+    weight: 3.0    # Important
+  - id: style
+    weight: 1.0    # Nice to have
+```
+
+### 4. Use Required for Non-Negotiables
+
+```yaml
+- id: no-harmful-content
+  expected_outcome: Response contains no harmful content
+  required: true  # Fail entire eval if violated
+```
+
+### 5. Define Score Ranges for Consistency
+
+```yaml
+score_ranges:
+  0: Completely fails criterion
+  3: Major issues
+  5: Partial success
+  7: Minor issues
+  10: Fully meets criterion
+```
+
+## Next Steps
+
+- [Composite](/evaluators/composite/) - Combine rubrics with other evaluators
+- [LLM Judge](/evaluators/llm-judge/) - Semantic evaluation
+- [Verdicts](/specification/verdicts/) - Score aggregation

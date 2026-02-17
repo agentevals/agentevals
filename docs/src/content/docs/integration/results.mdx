@@ -1,0 +1,348 @@
+---
+title: Results
+description: Evaluation result format and analysis
+---
+
+AgentEvals produces structured results in JSONL format, enabling analysis, tracking, and reporting.
+
+## Result Format
+
+### Single Evaluation Result
+
+```json
+{
+  "timestamp": "2025-02-16T12:00:00Z",
+  "evalId": "detect-off-by-one",
+  "dataset": "code-review",
+  "conversationId": null,
+
+  "score": 0.85,
+  "verdict": "pass",
+
+  "hits": [
+    "Correctly identifies the bug",
+    "Provides accurate fix"
+  ],
+  "misses": [
+    "Could explain impact more clearly"
+  ],
+
+  "candidateAnswer": "Bug detected: Loop condition...",
+  "target": "default",
+
+  "traceSummary": {
+    "eventCount": 3,
+    "toolNames": ["read_file"],
+    "costUsd": 0.002,
+    "durationMs": 1500
+  },
+
+  "evaluatorResults": [
+    {
+      "name": "correctness",
+      "type": "llm_judge",
+      "score": 0.9,
+      "weight": 2.0,
+      "hits": ["Accurate identification"],
+      "misses": [],
+      "reasoning": "Strong analysis"
+    },
+    {
+      "name": "format",
+      "type": "code_judge",
+      "score": 0.8,
+      "weight": 1.0,
+      "hits": ["Valid structure"],
+      "misses": ["Minor formatting issues"]
+    }
+  ]
+}
+```
+
+## Result Fields
+
+### Core Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `timestamp` | `string` | ISO 8601 timestamp |
+| `evalId` | `string` | Evalcase ID |
+| `dataset` | `string` | EVAL name |
+| `score` | `number` | Final score (0-1) |
+| `verdict` | `string` | pass / borderline / fail |
+
+### Content Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `hits` | `string[]` | Aggregated criteria met |
+| `misses` | `string[]` | Aggregated criteria missed |
+| `candidateAnswer` | `string` | Agent's response |
+| `target` | `string` | Target used |
+
+### Trace Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `traceSummary.eventCount` | `number` | Total events |
+| `traceSummary.toolNames` | `string[]` | Tools invoked |
+| `traceSummary.costUsd` | `number` | Execution cost |
+| `traceSummary.durationMs` | `number` | Execution time |
+
+### Evaluator Results
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `evaluatorResults` | `array` | Per-evaluator details |
+| `evaluatorResults[].name` | `string` | Evaluator name |
+| `evaluatorResults[].type` | `string` | Evaluator type |
+| `evaluatorResults[].score` | `number` | Individual score |
+| `evaluatorResults[].reasoning` | `string` | Explanation (optional) |
+
+## Verdicts
+
+| Verdict | Score Range | Description |
+|---------|-------------|-------------|
+| `pass` | >= 0.8 | Meets expectations |
+| `borderline` | >= 0.6, < 0.8 | Needs review |
+| `fail` | < 0.6 | Does not meet expectations |
+
+## Output Location
+
+### Default Location
+
+```
+.agentv/results/
+├── code-review-2025-02-16T12-00-00.jsonl
+├── rag-accuracy-2025-02-16T12-30-00.jsonl
+└── latest.jsonl → code-review-2025-02-16T12-00-00.jsonl
+```
+
+### Custom Output
+
+```bash
+agentv eval ./EVAL.yaml --output ./results/my-results.jsonl
+```
+
+## Analyzing Results
+
+### Using jq
+
+```bash
+# Count by verdict
+cat results.jsonl | jq -s 'group_by(.verdict) | map({verdict: .[0].verdict, count: length})'
+
+# Average score
+cat results.jsonl | jq -s 'map(.score) | add / length'
+
+# Failed cases
+cat results.jsonl | jq 'select(.verdict == "fail")'
+
+# Top misses
+cat results.jsonl | jq -s '[.[].misses[]] | group_by(.) | map({miss: .[0], count: length}) | sort_by(-.count)[:5]'
+```
+
+### Using Python
+
+```python
+import json
+from collections import Counter
+
+# Load results
+results = []
+with open('results.jsonl') as f:
+    for line in f:
+        results.append(json.loads(line))
+
+# Verdict distribution
+verdicts = Counter(r['verdict'] for r in results)
+print(f"Pass: {verdicts['pass']}, Fail: {verdicts['fail']}")
+
+# Average score
+avg_score = sum(r['score'] for r in results) / len(results)
+print(f"Average score: {avg_score:.2f}")
+
+# Common misses
+all_misses = [m for r in results for m in r['misses']]
+common_misses = Counter(all_misses).most_common(5)
+print("Top misses:", common_misses)
+```
+
+## Aggregating Results
+
+### Suite Summary
+
+```json
+{
+  "suite": "code-review",
+  "timestamp": "2025-02-16T12:00:00Z",
+  "target": "default",
+
+  "summary": {
+    "total": 100,
+    "pass": 75,
+    "borderline": 15,
+    "fail": 10,
+    "passRate": 0.75,
+    "averageScore": 0.82
+  },
+
+  "byEvaluator": {
+    "correctness": {
+      "averageScore": 0.85,
+      "minScore": 0.3,
+      "maxScore": 1.0
+    },
+    "format": {
+      "averageScore": 0.78,
+      "minScore": 0.5,
+      "maxScore": 1.0
+    }
+  },
+
+  "topMisses": [
+    {"miss": "Could explain impact more clearly", "count": 25},
+    {"miss": "Missing security consideration", "count": 12}
+  ]
+}
+```
+
+## Tracking Over Time
+
+### Version Comparison
+
+```json
+{
+  "comparison": {
+    "baseline": {
+      "version": "1.0.0",
+      "passRate": 0.72,
+      "averageScore": 0.78
+    },
+    "current": {
+      "version": "1.1.0",
+      "passRate": 0.85,
+      "averageScore": 0.86
+    },
+    "delta": {
+      "passRate": "+0.13",
+      "averageScore": "+0.08"
+    }
+  }
+}
+```
+
+### Trend Analysis
+
+```python
+import json
+from datetime import datetime
+import matplotlib.pyplot as plt
+
+# Load multiple result files
+scores_by_date = {}
+for file in result_files:
+    with open(file) as f:
+        results = [json.loads(line) for line in f]
+    date = results[0]['timestamp'][:10]
+    avg = sum(r['score'] for r in results) / len(results)
+    scores_by_date[date] = avg
+
+# Plot trend
+plt.plot(list(scores_by_date.keys()), list(scores_by_date.values()))
+plt.xlabel('Date')
+plt.ylabel('Average Score')
+plt.title('Evaluation Score Trend')
+plt.savefig('trend.png')
+```
+
+## CI/CD Integration
+
+### GitHub Actions
+
+```yaml
+# .github/workflows/eval.yml
+- name: Run evaluations
+  run: agentv eval ./evals/**/*.yaml --output results.jsonl
+
+- name: Check pass rate
+  run: |
+    PASS_RATE=$(cat results.jsonl | jq -s '[.[] | select(.verdict == "pass")] | length / length')
+    if (( $(echo "$PASS_RATE < 0.8" | bc -l) )); then
+      echo "Pass rate $PASS_RATE below threshold 0.8"
+      exit 1
+    fi
+
+- name: Upload results
+  uses: actions/upload-artifact@v3
+  with:
+    name: eval-results
+    path: results.jsonl
+```
+
+### Threshold Enforcement
+
+```bash
+#!/bin/bash
+# scripts/check_eval.sh
+
+RESULTS=$1
+THRESHOLD=${2:-0.8}
+
+PASS_RATE=$(cat "$RESULTS" | jq -s '
+  [.[] | select(.verdict == "pass")] | length as $pass |
+  length as $total |
+  $pass / $total
+')
+
+echo "Pass rate: $PASS_RATE (threshold: $THRESHOLD)"
+
+if (( $(echo "$PASS_RATE < $THRESHOLD" | bc -l) )); then
+  echo "FAIL: Below threshold"
+  exit 1
+else
+  echo "PASS: Above threshold"
+  exit 0
+fi
+```
+
+## Best Practices
+
+### 1. Store Results Long-Term
+
+```bash
+# Archive with timestamp
+cp results.jsonl "archive/$(date +%Y%m%d-%H%M%S).jsonl"
+```
+
+### 2. Include Metadata
+
+```yaml
+metadata:
+  commit: ${{ github.sha }}
+  branch: ${{ github.ref }}
+  run_id: ${{ github.run_id }}
+```
+
+### 3. Monitor Trends
+
+Track key metrics over time:
+- Pass rate
+- Average score
+- Common failure patterns
+- Cost per evaluation
+
+### 4. Set Alerts
+
+```bash
+# Alert on regression
+if [ "$PASS_RATE" -lt "$BASELINE_PASS_RATE" ]; then
+  send_alert "Evaluation regression detected"
+fi
+```
+
+## Next Steps
+
+- [Targets](/integration/targets/) - Configure targets
+- [Organization](/specification/organization/) - File structure
+- [Testing Pyramid](/patterns/testing-pyramid/) - Evaluation strategy

@@ -1,0 +1,340 @@
+---
+title: Execution Metrics
+description: Set performance bounds for latency, cost, and resource usage
+---
+
+The `execution_metrics` evaluator validates performance characteristics of agent execution. Use it to ensure agents operate within acceptable bounds.
+
+## Configuration
+
+```yaml
+evaluators:
+  - name: performance
+    type: execution_metrics
+    max_tool_calls: 10
+    max_llm_calls: 5
+    max_tokens: 5000
+    max_cost_usd: 0.10
+    max_duration_ms: 30000
+```
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `max_tool_calls` | `integer` | Maximum number of tool invocations |
+| `max_llm_calls` | `integer` | Maximum number of LLM API calls |
+| `max_tokens` | `integer` | Maximum total tokens (input + output) |
+| `max_input_tokens` | `integer` | Maximum input tokens |
+| `max_output_tokens` | `integer` | Maximum output tokens |
+| `max_cost_usd` | `number` | Maximum cost in USD |
+| `max_duration_ms` | `integer` | Maximum execution time in milliseconds |
+| `target_exploration_ratio` | `number` | Target ratio of exploration vs exploitation |
+| `exploration_tolerance` | `number` | Acceptable deviation from target ratio |
+
+## Examples
+
+### Basic Performance Bounds
+
+```yaml
+name: efficient-agent-eval
+version: "1.0"
+
+execution:
+  evaluators:
+    - name: performance
+      type: execution_metrics
+      max_tool_calls: 5
+      max_duration_ms: 10000
+
+evalcases:
+  - id: quick-lookup
+    expected_outcome: Agent finds answer efficiently
+    input: "What is the capital of France?"
+```
+
+### Cost Control
+
+```yaml
+execution:
+  evaluators:
+    - name: budget
+      type: execution_metrics
+      max_cost_usd: 0.05
+      max_tokens: 2000
+```
+
+### Comprehensive Metrics
+
+```yaml
+execution:
+  evaluators:
+    - name: full_metrics
+      type: execution_metrics
+      max_tool_calls: 10
+      max_llm_calls: 5
+      max_tokens: 10000
+      max_input_tokens: 8000
+      max_output_tokens: 2000
+      max_cost_usd: 0.25
+      max_duration_ms: 60000
+```
+
+### Tiered Performance
+
+Different bounds for different eval cases:
+
+```yaml
+evalcases:
+  - id: simple-query
+    expected_outcome: Quick response
+    input: "Hello!"
+    execution:
+      evaluators:
+        - name: fast
+          type: execution_metrics
+          max_duration_ms: 2000
+          max_tool_calls: 0
+
+  - id: complex-research
+    expected_outcome: Thorough research
+    input: "Compare Python vs JavaScript for web development"
+    execution:
+      evaluators:
+        - name: research_bounds
+          type: execution_metrics
+          max_duration_ms: 60000
+          max_tool_calls: 20
+          max_cost_usd: 0.50
+```
+
+## Scoring
+
+Execution metrics use threshold-based scoring:
+
+| Metric vs Limit | Score |
+|-----------------|-------|
+| Within limit | 1.0 |
+| Exceeds limit | 0.0 |
+
+When multiple metrics are specified, all must pass for score of 1.0.
+
+### Scoring Example
+
+```yaml
+evaluators:
+  - name: perf
+    type: execution_metrics
+    max_tool_calls: 10   # Actual: 8 ✓
+    max_duration_ms: 5000  # Actual: 3000 ✓
+    max_cost_usd: 0.10   # Actual: 0.12 ✗
+```
+
+**Result:**
+- Individual: tool_calls ✓, duration ✓, cost ✗
+- Overall score: 0.0 (any failure = fail)
+
+## Combining with Other Evaluators
+
+### Quality + Performance
+
+```yaml
+execution:
+  evaluators:
+    - name: quality
+      type: llm_judge
+      prompt: ./prompts/quality.md
+      weight: 3.0
+
+    - name: performance
+      type: execution_metrics
+      max_duration_ms: 10000
+      weight: 1.0
+```
+
+### In Composite
+
+```yaml
+execution:
+  evaluators:
+    - name: production_ready
+      type: composite
+      evaluators:
+        - name: correctness
+          type: llm_judge
+          prompt: ./prompts/correct.md
+
+        - name: efficiency
+          type: execution_metrics
+          max_tool_calls: 10
+          max_cost_usd: 0.10
+
+      aggregator:
+        type: all_or_nothing
+        threshold: 0.8
+```
+
+### With Tool Trajectory
+
+```yaml
+execution:
+  evaluators:
+    - name: workflow
+      type: tool_trajectory
+      mode: any_order
+      minimums:
+        search: 1
+
+    - name: bounded_workflow
+      type: execution_metrics
+      max_tool_calls: 5  # Don't over-search
+```
+
+## Trace Summary
+
+Execution metrics are calculated from trace data:
+
+```json
+{
+  "traceSummary": {
+    "eventCount": 5,
+    "toolNames": ["search", "read", "read", "summarize"],
+    "toolCallCount": 4,
+    "llmCallCount": 2,
+    "inputTokens": 1500,
+    "outputTokens": 500,
+    "totalTokens": 2000,
+    "costUsd": 0.03,
+    "durationMs": 4500
+  }
+}
+```
+
+## Use Cases
+
+### API Cost Control
+
+```yaml
+# Limit spend per evaluation
+- name: budget_guard
+  type: execution_metrics
+  max_cost_usd: 0.02
+  max_tokens: 1000
+```
+
+### Latency Requirements
+
+```yaml
+# Real-time response requirement
+- name: latency_sla
+  type: execution_metrics
+  max_duration_ms: 3000
+```
+
+### Prevent Infinite Loops
+
+```yaml
+# Stop runaway agents
+- name: loop_guard
+  type: execution_metrics
+  max_tool_calls: 50
+  max_llm_calls: 20
+```
+
+### Resource-Constrained Environments
+
+```yaml
+# Edge deployment constraints
+- name: edge_limits
+  type: execution_metrics
+  max_tokens: 500
+  max_duration_ms: 1000
+```
+
+## Best Practices
+
+### 1. Set Realistic Bounds
+
+Base limits on observed behavior:
+```yaml
+# After profiling typical runs
+max_tool_calls: 15      # P95 was 12
+max_duration_ms: 45000  # P95 was 38000
+```
+
+### 2. Different Bounds for Different Tasks
+
+```yaml
+evalcases:
+  - id: simple
+    execution:
+      evaluators:
+        - name: tight
+          type: execution_metrics
+          max_duration_ms: 5000
+
+  - id: complex
+    execution:
+      evaluators:
+        - name: relaxed
+          type: execution_metrics
+          max_duration_ms: 60000
+```
+
+### 3. Combine with Quality Metrics
+
+Don't optimize only for speed:
+```yaml
+evaluators:
+  - name: quality
+    weight: 3.0  # More important
+
+  - name: performance
+    weight: 1.0  # Still matters
+```
+
+### 4. Monitor Trends
+
+Track metrics over time to catch regressions:
+```yaml
+metadata:
+  baseline_duration_ms: 5000
+  baseline_cost_usd: 0.02
+```
+
+### 5. Account for Variance
+
+Add buffer for natural variation:
+```yaml
+# If average is 10s, allow 15s
+max_duration_ms: 15000
+```
+
+## Result Format
+
+```json
+{
+  "name": "performance",
+  "type": "execution_metrics",
+  "score": 1.0,
+  "hits": [
+    "Tool calls (8) within limit (10)",
+    "Duration (4500ms) within limit (10000ms)",
+    "Cost ($0.03) within limit ($0.10)"
+  ],
+  "misses": [],
+  "details": {
+    "tool_calls": 8,
+    "llm_calls": 2,
+    "total_tokens": 2000,
+    "cost_usd": 0.03,
+    "duration_ms": 4500
+  }
+}
+```
+
+## Next Steps
+
+- [Tool Trajectory](/evaluators/tool-trajectory/) - Validate tool patterns
+- [Composite](/evaluators/composite/) - Combine evaluators
+- [Verdicts](/specification/verdicts/) - Score aggregation

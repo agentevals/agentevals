@@ -1,0 +1,333 @@
+---
+title: Evalcase Schema
+description: Schema reference for evaluation cases
+---
+
+An **evalcase** is a single test case within an evaluation suite. Each evalcase defines an input, expected outcome, and optionally how to evaluate the result.
+
+## Schema
+
+```yaml
+# Required fields
+id: string                      # Unique identifier within file
+expected_outcome: string        # Natural language success criteria
+
+# Input (at least one required)
+input: string | Message[]       # Input to the agent
+input_messages: Message[]       # Canonical form
+
+# Expected output (optional)
+expected_output: string | object | Message[]
+expected_messages: Message[]    # Canonical form
+
+# Evaluation (optional)
+rubrics: (string | Rubric)[]    # Inline evaluation criteria
+execution: ExecutionConfig      # Per-case execution override
+
+# Metadata (optional)
+description: string             # Human-readable description
+conversation_id: string         # Groups related multi-turn cases
+note: string                    # Test-specific context
+metadata: object                # Custom key-value pairs
+```
+
+## Field Reference
+
+### id (required)
+
+Unique identifier within the EVAL.yaml file.
+
+- **Type:** `string`
+- **Constraints:** Must be unique within the file
+
+```yaml
+evalcases:
+  - id: greeting-response
+  - id: error-handling
+  - id: edge-case-empty-input
+```
+
+### expected_outcome (required)
+
+Natural language description of what constitutes success.
+
+- **Type:** `string`
+- **Purpose:** Used by LLM judges and for documentation
+
+```yaml
+expected_outcome: |
+  Agent correctly identifies the off-by-one bug in the loop condition
+  and provides an accurate fix with clear explanation.
+```
+
+### input / input_messages
+
+The input to send to the agent.
+
+**Shorthand form (`input`):**
+```yaml
+input: "Hello, my name is Alice!"
+# Expands to:
+input_messages:
+  - role: user
+    content: "Hello, my name is Alice!"
+```
+
+**Full form (`input_messages`):**
+```yaml
+input_messages:
+  - role: system
+    content: "You are a helpful assistant."
+  - role: user
+    content: "Hello, my name is Alice!"
+```
+
+**With file references:**
+```yaml
+input_messages:
+  - role: user
+    content:
+      - type: text
+        value: "Review this code:"
+      - type: file
+        value: ./fixtures/buggy.js
+```
+
+### Message Schema
+
+```yaml
+role: string              # "system" | "user" | "assistant" | "tool"
+content: string | ContentBlock[]
+
+# For tool messages
+tool_call_id: string      # References a tool call
+name: string              # Tool name (for tool messages)
+
+# For assistant messages with tool calls
+tool_calls:
+  - id: string
+    type: "function"
+    function:
+      name: string
+      arguments: string   # JSON string
+```
+
+### ContentBlock Schema
+
+```yaml
+# Text content
+- type: text
+  value: string
+
+# File reference
+- type: file
+  value: string           # Relative or absolute path
+
+# Image content
+- type: image
+  value: string           # Path or base64
+
+# JSON content
+- type: json
+  value: object
+```
+
+### expected_output / expected_messages
+
+Reference output for comparison.
+
+**Shorthand:**
+```yaml
+expected_output: "Hello Alice! Nice to meet you."
+```
+
+**Full form:**
+```yaml
+expected_messages:
+  - role: assistant
+    content: "Hello Alice! Nice to meet you."
+```
+
+**Structured output:**
+```yaml
+expected_output:
+  name: "Alice"
+  age: 30
+  verified: true
+```
+
+### rubrics
+
+Inline evaluation criteria. Can be simple strings or structured objects.
+
+**Simple strings:**
+```yaml
+rubrics:
+  - Mentions the user's name
+  - Contains a greeting
+  - Maintains friendly tone
+```
+
+**Structured rubrics:**
+```yaml
+rubrics:
+  - id: name-mention
+    expected_outcome: Response includes "Alice"
+    weight: 2.0
+    required: true
+
+  - id: greeting
+    expected_outcome: Contains a greeting phrase
+    weight: 1.0
+    score_ranges:
+      0: No greeting present
+      5: Generic greeting
+      10: Personalized greeting
+```
+
+### Rubric Schema
+
+```yaml
+id: string                # Unique identifier
+expected_outcome: string  # What this rubric checks
+weight: number            # Scoring weight (default: 1.0)
+required: boolean         # If true, fail verdict if missed
+score_ranges:             # Analytic scoring (0-10 scale)
+  0: string               # Description for score 0
+  5: string               # Description for score 5
+  10: string              # Description for score 10
+```
+
+### execution
+
+Per-evalcase execution override.
+
+```yaml
+evalcases:
+  - id: slow-task
+    expected_outcome: Completes analysis
+    input: "Analyze this large dataset..."
+    execution:
+      timeout_seconds: 600    # Override default timeout
+      target: powerful_model  # Use different target
+      evaluators:
+        - name: custom_check
+          type: code_judge
+          script: ["python", "./judges/analysis.py"]
+```
+
+### conversation_id
+
+Groups related multi-turn test cases.
+
+```yaml
+evalcases:
+  - id: turn-1
+    conversation_id: support-flow
+    input:
+      - role: user
+        content: "I need help with my account"
+
+  - id: turn-2
+    conversation_id: support-flow
+    input:
+      - role: user
+        content: "My email is alice@example.com"
+      - role: assistant
+        content: "I found your account. How can I help?"
+      - role: user
+        content: "Reset my password please"
+```
+
+### description
+
+Human-readable description for documentation.
+
+```yaml
+- id: edge-case-null
+  description: |
+    Tests handling of null input values.
+    This edge case should be handled gracefully.
+  expected_outcome: Returns appropriate error message
+```
+
+### note
+
+Test-specific context provided to evaluators.
+
+```yaml
+- id: regional-date
+  expected_outcome: Parses date correctly
+  note: |
+    The date format is DD/MM/YYYY (European format).
+    Agent should not assume US format.
+  input:
+    - role: user
+      content: "What day is 05/03/2024?"
+```
+
+## Complete Examples
+
+### Basic Evalcase
+
+```yaml
+- id: simple-greeting
+  expected_outcome: Agent responds with a greeting
+  input: "Hello!"
+  rubrics:
+    - Contains a greeting word
+```
+
+### Complex Evalcase
+
+```yaml
+- id: code-review-security
+  description: Tests security vulnerability detection
+  expected_outcome: |
+    Agent identifies SQL injection vulnerability and suggests
+    parameterized queries as the fix.
+
+  input_messages:
+    - role: system
+      content:
+        - type: file
+          value: ./prompts/security-reviewer.md
+    - role: user
+      content:
+        - type: text
+          value: "Review this code for security issues:"
+        - type: file
+          value: ./fixtures/vulnerable.py
+
+  expected_messages:
+    - role: assistant
+      content: |
+        Security Issue: SQL Injection vulnerability detected.
+        Recommendation: Use parameterized queries.
+
+  rubrics:
+    - id: identifies-vuln
+      expected_outcome: Identifies SQL injection
+      weight: 3.0
+      required: true
+
+    - id: suggests-fix
+      expected_outcome: Suggests parameterized queries
+      weight: 2.0
+
+    - id: explains-risk
+      expected_outcome: Explains potential impact
+      weight: 1.0
+
+  execution:
+    evaluators:
+      - name: vuln_check
+        type: code_judge
+        script: ["python", "./judges/security_check.py"]
+```
+
+## Next Steps
+
+- [Evaluators](/specification/evaluators/) - Assessment configuration
+- [Verdicts](/specification/verdicts/) - Score calculation
+- [Tool Trajectory](/evaluators/tool-trajectory/) - Agentic evaluation

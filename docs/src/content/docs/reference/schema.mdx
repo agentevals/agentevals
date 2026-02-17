@@ -1,0 +1,299 @@
+---
+title: Schema Reference
+description: Complete JSON Schema for AgentEvals
+---
+
+This page provides the complete JSON Schema reference for validating EVAL.yaml files.
+
+## Schema Location
+
+The official schema is available at:
+- **URL:** `https://agentevals.dev/schema/eval.schema.json`
+- **Local:** `spec/schema/eval.schema.json`
+
+## Using the Schema
+
+### In VS Code
+
+Add to your settings.json:
+
+```json
+{
+  "yaml.schemas": {
+    "https://agentevals.dev/schema/eval.schema.json": ["**/EVAL.yaml", "**/dataset.yaml"]
+  }
+}
+```
+
+### CLI Validation
+
+```bash
+# Using AgentV
+agentv validate ./EVAL.yaml
+
+# Using ajv
+npx ajv validate -s eval.schema.json -d EVAL.yaml
+```
+
+### In Code
+
+```typescript
+import Ajv from 'ajv';
+import schema from './eval.schema.json';
+
+const ajv = new Ajv();
+const validate = ajv.compile(schema);
+
+const evalFile = loadYaml('./EVAL.yaml');
+if (!validate(evalFile)) {
+  console.error(validate.errors);
+}
+```
+
+## Root Schema
+
+```yaml
+# EVAL.yaml root structure
+name: string              # Required: Unique identifier
+version: string           # Optional: Spec version (default: "1.0")
+description: string       # Optional: Human-readable description
+metadata: object          # Optional: Custom key-value pairs
+execution: ExecutionConfig  # Optional: Default execution settings
+evalcases: Evalcase[]     # Required: Array of test cases
+```
+
+## ExecutionConfig
+
+```yaml
+execution:
+  target: string              # Target provider name
+  timeout_seconds: integer    # Max execution time (1-3600)
+  evaluators: Evaluator[]     # Array of evaluator configs
+```
+
+## Evalcase
+
+```yaml
+evalcases:
+  - id: string                # Required: Unique identifier
+    expected_outcome: string  # Required: Success criteria
+
+    # Input (at least one required)
+    input: string | Message[]
+    input_messages: Message[]
+
+    # Output (optional)
+    expected_output: string | object | Message[]
+    expected_messages: Message[]
+
+    # Evaluation (optional)
+    rubrics: (string | Rubric)[]
+    execution: ExecutionConfig
+
+    # Metadata (optional)
+    description: string
+    conversation_id: string
+    note: string
+    metadata: object
+```
+
+## Message
+
+```yaml
+role: string          # Required: system | user | assistant | tool
+content: string | ContentBlock[]
+
+# For tool messages
+tool_call_id: string
+name: string
+
+# For assistant messages
+tool_calls: ToolCall[]
+```
+
+## ContentBlock
+
+```yaml
+type: string    # Required: text | file | image | json
+value: any      # Required: Content value
+```
+
+## ToolCall
+
+```yaml
+id: string          # Required: Unique identifier
+type: "function"    # Required: Always "function"
+function:
+  name: string      # Required: Function name
+  arguments: string # Required: JSON string of arguments
+```
+
+## Rubric
+
+```yaml
+id: string              # Required: Unique identifier
+expected_outcome: string  # Required: What this rubric evaluates
+weight: number          # Optional: Scoring weight (default: 1.0)
+required: boolean       # Optional: Fail if not met (default: false)
+score_ranges:           # Optional: Analytic scoring
+  0: string
+  5: string
+  10: string
+```
+
+## Evaluator
+
+### Base Properties
+
+```yaml
+name: string        # Required: Unique name
+type: string        # Required: Evaluator type
+weight: number      # Optional: Scoring weight
+config: object      # Optional: Type-specific config
+```
+
+### code_judge
+
+```yaml
+type: code_judge
+script: string[]    # Required: Command to execute
+cwd: string         # Optional: Working directory
+```
+
+### llm_judge
+
+```yaml
+type: llm_judge
+prompt: string      # Required: Prompt path or inline
+target: string      # Optional: Judge model target
+```
+
+### rubric
+
+```yaml
+type: rubric
+rubrics: (string | Rubric)[]  # Required: Criteria
+```
+
+### composite
+
+```yaml
+type: composite
+evaluators: Evaluator[]  # Required: Child evaluators
+aggregator: Aggregator   # Optional: Aggregation strategy
+```
+
+### tool_trajectory
+
+```yaml
+type: tool_trajectory
+mode: string              # Optional: any_order | in_order | exact
+expected: ExpectedToolCall[]  # Optional: Expected calls
+minimums: object          # Optional: Minimum counts
+```
+
+### field_accuracy
+
+```yaml
+type: field_accuracy
+fields: FieldSpec[]       # Required: Fields to check
+aggregation: string       # Optional: weighted_average | minimum | all_or_nothing
+```
+
+### execution_metrics
+
+```yaml
+type: execution_metrics
+max_tool_calls: integer
+max_llm_calls: integer
+max_tokens: integer
+max_input_tokens: integer
+max_output_tokens: integer
+max_cost_usd: number
+max_duration_ms: integer
+```
+
+## Aggregator
+
+```yaml
+type: string          # Required: weighted_average | minimum | maximum | safety_gate | all_or_nothing
+weights: object       # Optional: Per-evaluator weights
+required: string[]    # Optional: Required evaluators (safety_gate)
+threshold: number     # Optional: Threshold (all_or_nothing)
+```
+
+## ExpectedToolCall
+
+```yaml
+tool: string          # Required: Tool name
+args: object | "any"  # Optional: Expected arguments
+max_duration_ms: integer  # Optional: Max duration
+```
+
+## FieldSpec
+
+```yaml
+path: string          # Required: JSON path (dot notation)
+match: string         # Optional: exact | contains | regex | numeric_tolerance | date
+required: boolean     # Optional: default false
+weight: number        # Optional: default 1.0
+tolerance: number     # Optional: For numeric_tolerance
+```
+
+## Validation Rules
+
+### Name Format
+
+- 2-64 characters
+- Lowercase alphanumeric + hyphens
+- Must start with letter
+- Must end with letter or number
+- No consecutive hyphens
+
+**Valid:** `code-review`, `rag-accuracy`, `my-eval-2`
+**Invalid:** `Code-Review`, `-invalid`, `invalid-`, `my--eval`
+
+### Required Fields
+
+- `name` and `evalcases` at root
+- `id` and `expected_outcome` in evalcases
+- `name` and `type` in evaluators
+
+### Input Requirements
+
+Each evalcase must have at least one of:
+- `input` (shorthand)
+- `input_messages` (canonical)
+
+### Type Constraints
+
+| Field | Type | Constraints |
+|-------|------|-------------|
+| `score` | number | 0.0 - 1.0 |
+| `weight` | number | >= 0 |
+| `timeout_seconds` | integer | 1 - 3600 |
+| `max_cost_usd` | number | >= 0 |
+
+## Full Schema
+
+The complete JSON Schema is available at:
+
+- **GitHub:** `spec/schema/eval.schema.json`
+- **CDN:** `https://agentevals.dev/schema/eval.schema.json`
+
+```json
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://agentevals.dev/schema/eval.schema.json",
+  "title": "AgentEvals EVAL.yaml Schema",
+  "type": "object",
+  "required": ["name", "evalcases"],
+  ...
+}
+```
+
+## Next Steps
+
+- [Glossary](/reference/glossary/) - Terminology
+- [EVAL Format](/specification/eval-format/) - Usage guide
+- [Examples](/specification/overview/) - Example files

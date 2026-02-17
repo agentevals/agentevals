@@ -1,0 +1,384 @@
+---
+title: Multi-Turn Evaluation
+description: Evaluate conversation and context retention across turns
+---
+
+Multi-turn evaluation assesses agent performance across conversational exchanges. Use it for chatbots, assistants, and any agent handling extended interactions.
+
+## Conversation Structure
+
+### Using conversation_id
+
+Group related evalcases with `conversation_id`:
+
+```yaml
+evalcases:
+  - id: support-turn-1
+    conversation_id: support-session
+    expected_outcome: Agent acknowledges request
+    input:
+      - role: user
+        content: "I need help with my order"
+
+  - id: support-turn-2
+    conversation_id: support-session
+    expected_outcome: Agent provides order information
+    input:
+      - role: assistant
+        content: "I'd be happy to help! Could you provide your order number?"
+      - role: user
+        content: "Order #12345"
+
+  - id: support-turn-3
+    conversation_id: support-session
+    expected_outcome: Agent resolves issue
+    input:
+      - role: assistant
+        content: "I found order #12345. I see it's delayed. Would you like me to expedite shipping?"
+      - role: user
+        content: "Yes please"
+```
+
+### Full Conversation History
+
+Include complete history in each turn:
+
+```yaml
+evalcases:
+  - id: final-turn
+    expected_outcome: Agent maintains context throughout
+    input:
+      - role: system
+        content: You are a helpful assistant.
+      - role: user
+        content: "My name is Alice"
+      - role: assistant
+        content: "Nice to meet you, Alice!"
+      - role: user
+        content: "What's my name?"
+```
+
+## Evaluation Patterns
+
+### Context Retention
+
+```yaml
+name: context-retention
+version: "1.0"
+
+execution:
+  evaluators:
+    - name: retention
+      type: llm_judge
+      prompt: |
+        Evaluate if the agent maintains context across the conversation.
+
+        Conversation: {{input_messages}}
+        Final Response: {{candidate_answer}}
+
+        Check:
+        1. References earlier context correctly
+        2. Remembers user preferences/info
+        3. Maintains conversation coherence
+
+        Score 1.0 if context maintained, 0.0 if lost.
+
+evalcases:
+  - id: name-recall
+    expected_outcome: Agent remembers user's name
+    input:
+      - role: user
+        content: "Hi, I'm Bob"
+      - role: assistant
+        content: "Hello Bob! How can I help you today?"
+      - role: user
+        content: "What's my name?"
+
+  - id: preference-recall
+    expected_outcome: Agent remembers user's preferences
+    input:
+      - role: user
+        content: "I prefer Python over JavaScript"
+      - role: assistant
+        content: "Good choice! Python is great for many tasks."
+      - role: user
+        content: "What language should I use for data analysis?"
+```
+
+### Topic Coherence
+
+```yaml
+execution:
+  evaluators:
+    - name: coherence
+      type: llm_judge
+      prompt: |
+        Does the response stay on topic with the conversation?
+
+        Conversation: {{input_messages}}
+        Response: {{candidate_answer}}
+
+        Score:
+        - 1.0: Fully on topic
+        - 0.5: Partially on topic
+        - 0.0: Off topic or confusing
+```
+
+### Resolution Tracking
+
+```yaml
+execution:
+  evaluators:
+    - name: resolution
+      type: llm_judge
+      prompt: |
+        Has the agent resolved the user's issue?
+
+        Original request: (first user message)
+        Conversation: {{input_messages}}
+        Final response: {{candidate_answer}}
+
+        Check:
+        1. Issue identified
+        2. Solution provided
+        3. User confirmed resolution
+
+        Score 1.0 if resolved, 0.5 if in progress, 0.0 if unresolved.
+```
+
+## Complete Example
+
+```yaml
+name: support-conversation-eval
+version: "1.0"
+description: Evaluates multi-turn customer support conversations
+
+metadata:
+  tags: [multi-turn, support, conversation]
+
+execution:
+  evaluators:
+    - name: conversation_quality
+      type: composite
+      evaluators:
+        - name: context_retention
+          type: llm_judge
+          prompt: ./prompts/context.md
+          weight: 3.0
+
+        - name: resolution
+          type: llm_judge
+          prompt: ./prompts/resolution.md
+          weight: 2.0
+
+        - name: tone
+          type: llm_judge
+          prompt: ./prompts/tone.md
+          weight: 1.0
+
+      aggregator:
+        type: weighted_average
+
+evalcases:
+  # Complete conversation flow
+  - id: password-reset-1
+    conversation_id: password-reset
+    expected_outcome: Agent acknowledges password reset request
+    input:
+      - role: user
+        content: "I forgot my password"
+
+  - id: password-reset-2
+    conversation_id: password-reset
+    expected_outcome: Agent requests email for verification
+    input:
+      - role: assistant
+        content: "I can help you reset your password. What email is associated with your account?"
+      - role: user
+        content: "alice@example.com"
+
+  - id: password-reset-3
+    conversation_id: password-reset
+    expected_outcome: Agent confirms reset email sent
+    input:
+      - role: assistant
+        content: "I found your account. I'm sending a password reset link to alice@example.com now."
+      - role: user
+        content: "Got it, thanks!"
+
+  # Context retention test
+  - id: name-context
+    expected_outcome: Agent remembers and uses user's name
+    input:
+      - role: user
+        content: "My name is Charlie"
+      - role: assistant
+        content: "Nice to meet you, Charlie!"
+      - role: user
+        content: "Can you remind me of my name?"
+    rubrics:
+      - Response includes "Charlie"
+      - Doesn't say it forgot or doesn't know
+
+  # Error recovery
+  - id: clarification-flow
+    expected_outcome: Agent handles unclear request gracefully
+    input:
+      - role: user
+        content: "It's not working"
+      - role: assistant
+        content: "I'd like to help! Could you tell me more about what's not working?"
+      - role: user
+        content: "The login page"
+    rubrics:
+      - Agent asks clarifying questions appropriately
+      - Doesn't make assumptions
+      - Eventually addresses the issue
+```
+
+## Evaluation Metrics
+
+### Turn-Level Metrics
+
+```yaml
+evalcases:
+  - id: turn-3
+    execution:
+      evaluators:
+        # Evaluate just this turn
+        - name: turn_relevance
+          type: llm_judge
+          prompt: |
+            Is this response relevant to the previous message?
+            Previous: (last assistant + user message)
+            Response: {{candidate_answer}}
+```
+
+### Conversation-Level Metrics
+
+```yaml
+execution:
+  evaluators:
+    # Evaluate entire conversation
+    - name: overall_flow
+      type: llm_judge
+      prompt: |
+        Evaluate the overall conversation quality.
+
+        Full conversation: {{input_messages}}
+        Final state: {{candidate_answer}}
+
+        Consider:
+        - Natural flow
+        - Effective resolution
+        - Appropriate length
+```
+
+## Tool Usage in Conversations
+
+### Track Tools Across Turns
+
+```yaml
+execution:
+  evaluators:
+    - name: tool_progression
+      type: tool_trajectory
+      mode: in_order
+      expected:
+        - tool: lookup_account
+        - tool: verify_identity
+        - tool: perform_action
+
+evalcases:
+  - id: account-lookup-flow
+    expected_outcome: Agent looks up account before action
+    input:
+      - role: user
+        content: "Update my shipping address"
+      - role: assistant
+        content: "Sure! Let me look up your account..."
+        tool_calls:
+          - id: tc1
+            type: function
+            function:
+              name: lookup_account
+              arguments: "{}"
+      - role: tool
+        tool_call_id: tc1
+        content: "Account found: Alice, alice@example.com"
+      - role: user
+        content: "New address is 123 Main St"
+```
+
+## Best Practices
+
+### 1. Test Critical Paths
+
+```yaml
+# Happy path
+- id: successful-resolution
+
+# Error handling
+- id: unclear-request
+
+# Edge cases
+- id: user-changes-topic
+```
+
+### 2. Vary Conversation Length
+
+```yaml
+# Short (2 turns)
+- id: quick-question
+
+# Medium (4-6 turns)
+- id: typical-support
+
+# Long (10+ turns)
+- id: complex-issue
+```
+
+### 3. Include Context Challenges
+
+```yaml
+# Test memory
+- id: recall-earlier-info
+
+# Test disambiguation
+- id: resolve-ambiguity
+
+# Test topic switching
+- id: handle-topic-change
+```
+
+### 4. Evaluate Both Turns and Overall
+
+```yaml
+execution:
+  evaluators:
+    # Per-turn quality
+    - name: turn_quality
+      type: llm_judge
+      prompt: ./prompts/turn.md
+
+    # Overall conversation
+    - name: conversation_quality
+      type: llm_judge
+      prompt: ./prompts/conversation.md
+```
+
+### 5. Use Realistic Scenarios
+
+```yaml
+evalcases:
+  - id: realistic-support
+    note: |
+      Based on actual support ticket patterns.
+      User may provide incomplete info initially.
+```
+
+## Next Steps
+
+- [Tool Trajectory](/evaluators/tool-trajectory/) - Track tool usage
+- [Composite](/evaluators/composite/) - Combine evaluators
+- [Safety Gates](/patterns/safety-gates/) - Conversation safety

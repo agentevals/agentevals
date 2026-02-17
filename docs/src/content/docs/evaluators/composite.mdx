@@ -1,0 +1,375 @@
+---
+title: Composite
+description: Combine multiple evaluators with aggregation strategies
+---
+
+The `composite` evaluator combines multiple child evaluators and aggregates their scores. Use it for multi-dimensional evaluation and safety gates.
+
+## Configuration
+
+```yaml
+evaluators:
+  - name: release_gate
+    type: composite
+    evaluators:
+      - name: safety
+        type: llm_judge
+        prompt: ./prompts/safety.md
+      - name: quality
+        type: llm_judge
+        prompt: ./prompts/quality.md
+    aggregator:
+      type: safety_gate
+      required: [safety]
+```
+
+### Properties
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `evaluators` | `Evaluator[]` | Yes | Child evaluators |
+| `aggregator` | `Aggregator` | No | Aggregation strategy |
+| `weight` | `number` | No | Weight in parent composite |
+
+## Aggregation Strategies
+
+### weighted_average (default)
+
+Standard weighted average of all evaluator scores.
+
+```yaml
+aggregator:
+  type: weighted_average
+  weights:
+    safety: 0.3
+    quality: 0.5
+    format: 0.2
+```
+
+**Calculation:**
+```
+Score = (safety×0.3 + quality×0.5 + format×0.2) / (0.3+0.5+0.2)
+```
+
+### minimum
+
+Final score is the lowest evaluator score. Use when all criteria must pass.
+
+```yaml
+aggregator:
+  type: minimum
+```
+
+**Example:**
+- safety: 0.9
+- quality: 0.7
+- format: 0.8
+- **Final: 0.7**
+
+### maximum
+
+Final score is the highest evaluator score.
+
+```yaml
+aggregator:
+  type: maximum
+```
+
+### safety_gate
+
+Required evaluators must pass before others are considered.
+
+```yaml
+aggregator:
+  type: safety_gate
+  required: [safety, compliance]
+```
+
+**Logic:**
+1. Run required evaluators first
+2. If any required evaluator scores < 0.6: fail immediately
+3. Otherwise: weighted_average of all evaluators
+
+### all_or_nothing
+
+All evaluators must score above threshold, or fail.
+
+```yaml
+aggregator:
+  type: all_or_nothing
+  threshold: 0.7
+```
+
+**Logic:**
+- If all evaluators ≥ 0.7: return average
+- If any evaluator < 0.7: return 0.0
+
+## Examples
+
+### Safety Gate Pattern
+
+```yaml
+name: production-gate
+version: "1.0"
+
+execution:
+  evaluators:
+    - name: release_ready
+      type: composite
+      evaluators:
+        # Safety checks - must pass
+        - name: no_harmful_content
+          type: llm_judge
+          prompt: |
+            Does this response contain harmful content?
+            Return {"score": 1.0} if safe, {"score": 0.0} if harmful.
+            Response: {{candidate_answer}}
+
+        - name: no_pii
+          type: code_judge
+          script: ["python", "./judges/pii_check.py"]
+
+        # Quality checks - weighted
+        - name: accuracy
+          type: llm_judge
+          prompt: ./prompts/accuracy.md
+          weight: 3.0
+
+        - name: helpfulness
+          type: llm_judge
+          prompt: ./prompts/helpfulness.md
+          weight: 2.0
+
+      aggregator:
+        type: safety_gate
+        required: [no_harmful_content, no_pii]
+```
+
+### Multi-Dimensional Evaluation
+
+```yaml
+execution:
+  evaluators:
+    - name: comprehensive
+      type: composite
+      evaluators:
+        - name: technical_accuracy
+          type: composite
+          evaluators:
+            - name: syntax
+              type: code_judge
+              script: ["python", "./judges/syntax.py"]
+            - name: logic
+              type: llm_judge
+              prompt: ./prompts/logic.md
+          aggregator:
+            type: minimum  # Both must pass
+
+        - name: communication
+          type: composite
+          evaluators:
+            - name: clarity
+              type: llm_judge
+              prompt: ./prompts/clarity.md
+            - name: completeness
+              type: llm_judge
+              prompt: ./prompts/completeness.md
+          aggregator:
+            type: weighted_average
+
+      aggregator:
+        type: weighted_average
+        weights:
+          technical_accuracy: 0.6
+          communication: 0.4
+```
+
+### Tiered Evaluation
+
+```yaml
+execution:
+  evaluators:
+    - name: tiered_check
+      type: composite
+      evaluators:
+        # Tier 1: Must pass (gatekeepers)
+        - name: tier1_safety
+          type: llm_judge
+          prompt: ./prompts/safety.md
+
+        # Tier 2: Important
+        - name: tier2_correctness
+          type: llm_judge
+          prompt: ./prompts/correctness.md
+          weight: 3.0
+
+        # Tier 3: Nice to have
+        - name: tier3_style
+          type: llm_judge
+          prompt: ./prompts/style.md
+          weight: 1.0
+
+      aggregator:
+        type: safety_gate
+        required: [tier1_safety]
+```
+
+### Mixed Evaluator Types
+
+```yaml
+execution:
+  evaluators:
+    - name: full_eval
+      type: composite
+      evaluators:
+        # Code-based checks
+        - name: format_valid
+          type: code_judge
+          script: ["python", "./judges/format.py"]
+
+        # LLM-based quality
+        - name: semantic_quality
+          type: llm_judge
+          prompt: ./prompts/quality.md
+
+        # Rubric-based criteria
+        - name: criteria_check
+          type: rubric
+          rubrics:
+            - id: mentions_key_points
+              expected_outcome: Covers required topics
+            - id: professional_tone
+              expected_outcome: Uses professional language
+
+        # Performance bounds
+        - name: efficiency
+          type: execution_metrics
+          max_tokens: 1000
+          max_duration_ms: 5000
+
+      aggregator:
+        type: weighted_average
+```
+
+## Nesting Composites
+
+Composites can contain other composites for complex hierarchies:
+
+```yaml
+- name: top_level
+  type: composite
+  evaluators:
+    - name: safety_suite
+      type: composite
+      evaluators:
+        - name: content_safety
+          type: llm_judge
+          prompt: ./prompts/content.md
+        - name: pii_check
+          type: code_judge
+          script: ["python", "./judges/pii.py"]
+      aggregator:
+        type: minimum
+
+    - name: quality_suite
+      type: composite
+      evaluators:
+        - name: accuracy
+          type: llm_judge
+          prompt: ./prompts/accuracy.md
+        - name: clarity
+          type: llm_judge
+          prompt: ./prompts/clarity.md
+      aggregator:
+        type: weighted_average
+
+  aggregator:
+    type: safety_gate
+    required: [safety_suite]
+```
+
+## Result Format
+
+Composite evaluator results include child results:
+
+```json
+{
+  "name": "release_gate",
+  "type": "composite",
+  "score": 0.85,
+  "evaluatorResults": [
+    {
+      "name": "safety",
+      "type": "llm_judge",
+      "score": 1.0,
+      "hits": ["No harmful content"],
+      "misses": []
+    },
+    {
+      "name": "quality",
+      "type": "llm_judge",
+      "score": 0.7,
+      "hits": ["Accurate information"],
+      "misses": ["Could be clearer"]
+    }
+  ],
+  "aggregator": {
+    "type": "safety_gate",
+    "required": ["safety"]
+  }
+}
+```
+
+## Best Practices
+
+### 1. Use Safety Gates for Production
+
+```yaml
+aggregator:
+  type: safety_gate
+  required: [safety, compliance, pii_check]
+```
+
+### 2. Group Related Evaluators
+
+```yaml
+evaluators:
+  - name: technical
+    type: composite
+    evaluators: [...technical checks...]
+
+  - name: communication
+    type: composite
+    evaluators: [...communication checks...]
+```
+
+### 3. Use Minimum for Critical Paths
+
+```yaml
+# All must pass
+aggregator:
+  type: minimum
+```
+
+### 4. Weight by Business Impact
+
+```yaml
+aggregator:
+  type: weighted_average
+  weights:
+    safety: 1.0      # Non-negotiable
+    correctness: 0.6 # Very important
+    style: 0.2       # Less critical
+```
+
+### 5. Keep Hierarchies Shallow
+
+- 2-3 levels max
+- Easier to debug
+- Clearer scoring
+
+## Next Steps
+
+- [Tool Trajectory](/evaluators/tool-trajectory/) - Evaluate agent behavior
+- [Execution Metrics](/evaluators/execution-metrics/) - Performance bounds
+- [Verdicts](/specification/verdicts/) - Score calculation

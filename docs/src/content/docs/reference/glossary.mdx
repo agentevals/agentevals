@@ -1,0 +1,193 @@
+---
+title: Glossary
+description: Terminology and definitions for AgentEvals
+---
+
+## Core Concepts
+
+### Agent
+An AI system that can take actions, use tools, and interact with users or environments. Agents can be LLM-based chatbots, autonomous systems, or tool-using assistants.
+
+### AgentEvals
+The open specification for evaluating AI agent capabilities. Defines a declarative YAML-based format for evaluation suites.
+
+### AgentV
+The canonical implementation of the AgentEvals standard. Provides CLI tools for running evaluations.
+
+### Evaluation
+The process of assessing agent performance against defined criteria. Also called "eval" for short.
+
+### EVAL.yaml
+The primary file format for defining evaluation suites in the AgentEvals specification.
+
+## Evaluation Components
+
+### Evalcase
+A single test case within an evaluation suite. Contains input, expected outcome, and evaluation criteria.
+
+### Evaluator
+A component that assesses agent output. Types include `code_judge`, `llm_judge`, `rubric`, `composite`, `tool_trajectory`, `field_accuracy`, and `execution_metrics`.
+
+### Rubric
+A structured evaluation criterion with optional weights and scoring ranges. Can be a simple string or a detailed object.
+
+### Verdict
+The final outcome of an evaluation: `pass` (≥0.8), `borderline` (≥0.6 and &lt;0.8), or `fail` (&lt;0.6).
+
+### Score
+A numeric value between 0.0 and 1.0 representing evaluation performance.
+
+### Hits
+Criteria that were successfully met during evaluation.
+
+### Misses
+Criteria that were not met during evaluation.
+
+## Evaluator Types
+
+### Code Judge
+An evaluator that executes custom scripts (Python, TypeScript, shell) and returns structured results.
+
+### LLM Judge
+An evaluator that uses a language model to assess output based on a prompt template.
+
+### Composite
+An evaluator that combines multiple child evaluators with an aggregation strategy.
+
+### Tool Trajectory
+An evaluator that validates the sequence and pattern of tool calls made by an agent.
+
+### Field Accuracy
+An evaluator that checks structured data fields against expected values.
+
+### Execution Metrics
+An evaluator that validates performance characteristics (latency, cost, tokens).
+
+## Aggregation
+
+### Aggregator
+A strategy for combining scores from multiple evaluators. Types include `weighted_average`, `minimum`, `maximum`, `safety_gate`, and `all_or_nothing`.
+
+### Weighted Average
+Combines scores using weights: Σ(score × weight) / Σ(weights).
+
+### Safety Gate
+Requires specified evaluators to pass before considering others.
+
+### All or Nothing
+All evaluators must score above a threshold, or the entire evaluation fails.
+
+## Messages
+
+### Message
+A unit of conversation containing role and content. Roles include `system`, `user`, `assistant`, and `tool`.
+
+### Content Block
+A structured content element within a message. Types include `text`, `file`, `image`, and `json`.
+
+### Tool Call
+A function invocation by an assistant, containing name and arguments.
+
+### Input Messages
+The conversation history sent to the agent for evaluation.
+
+### Output Messages
+The agent's response, potentially including tool calls and results.
+
+## Targets
+
+### Target
+A named configuration for connecting to an agent or model provider.
+
+### Provider
+The system hosting the agent (e.g., Anthropic, Azure, OpenAI).
+
+### Judge Target
+A separate target used for LLM-based evaluation, often a more capable model.
+
+## Results
+
+### Result
+The output of running an evaluation, including score, verdict, hits, misses, and trace data.
+
+### Trace Summary
+Metadata about execution including event count, tools used, cost, and duration.
+
+### JSONL
+JSON Lines format used for storing evaluation results, with one JSON object per line.
+
+## Organization
+
+### Centralized Organization
+Storing all evaluations in a single `evals/` directory.
+
+### Skill-Based Organization
+Storing evaluations alongside skills in `skills/*/evals/`.
+
+### Dataset
+A collection of evalcases, either in YAML or JSONL format.
+
+## Patterns
+
+### Testing Pyramid
+An organization strategy with Unit Tests at the base, Evals in the middle, and Simulations at the top.
+
+### Safety Gate
+A pattern ensuring critical safety checks pass before quality evaluation.
+
+### Multi-Turn
+Evaluation of conversations spanning multiple exchanges.
+
+### Conversation ID
+An identifier grouping related evalcases in a multi-turn conversation.
+
+## Agent-Native Principles
+
+### Parity
+Principle that evals should test what agents actually do in production.
+
+### Granularity
+Principle of preferring atomic evaluators that compose into complex ones.
+
+### Composability
+Principle of building sophisticated evaluations from simple primitives.
+
+### Emergent Capability
+Principle of supporting tests for novel, unanticipated agent behaviors.
+
+### Improvement Over Time
+Principle of tracking evaluation and prompt versions for continuous improvement.
+
+## Technical Terms
+
+### JSON Schema
+A vocabulary for annotating and validating JSON documents. Used to define the EVAL.yaml structure.
+
+### YAML
+A human-readable data serialization format. Primary format for evaluation files.
+
+### Semantic Versioning
+Versioning scheme using MAJOR.MINOR.PATCH numbers.
+
+### Threshold
+A score boundary used for determining pass/fail status.
+
+### Weight
+A multiplier indicating relative importance of an evaluator or rubric.
+
+## Related Specifications
+
+### AgentSkills
+An open standard for defining reusable AI agent skills using SKILL.md files.
+
+### MCP (Model Context Protocol)
+A protocol for extending AI assistants with tools and resources.
+
+### JSONL (JSON Lines)
+A format where each line is a valid JSON object, used for large datasets and results.
+
+## Next Steps
+
+- [Introduction](/getting-started/introduction/) - Core concepts
+- [EVAL Format](/specification/eval-format/) - File format details
+- [Schema Reference](/reference/schema/) - Complete schema

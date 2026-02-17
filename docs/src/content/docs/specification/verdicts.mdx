@@ -1,0 +1,251 @@
+---
+title: Verdicts
+description: How evaluation scores are calculated and verdicts determined
+---
+
+The verdict is the final outcome of an evaluation, indicating whether the agent passed, failed, or was borderline.
+
+## Score Calculation
+
+### Step 1: Run Evaluators
+
+Each configured evaluator runs and produces a score between 0.0 and 1.0:
+
+```yaml
+evaluators:
+  - name: correctness     # → score: 0.9
+    type: llm_judge
+  - name: format          # → score: 0.8
+    type: code_judge
+  - name: efficiency      # → score: 0.7
+    type: execution_metrics
+```
+
+### Step 2: Weighted Average
+
+Scores are combined using weighted averaging:
+
+```
+Final Score = Σ(evaluator_score × weight) / Σ(weights)
+```
+
+**Example with equal weights:**
+```yaml
+evaluators:
+  - name: correctness
+    weight: 1.0  # score: 0.9
+  - name: format
+    weight: 1.0  # score: 0.8
+  - name: efficiency
+    weight: 1.0  # score: 0.7
+```
+
+```
+Final Score = (0.9 + 0.8 + 0.7) / 3 = 0.8
+```
+
+**Example with custom weights:**
+```yaml
+evaluators:
+  - name: correctness
+    weight: 3.0  # More important
+  - name: format
+    weight: 1.0
+  - name: efficiency
+    weight: 1.0
+```
+
+```
+Final Score = (0.9 × 3 + 0.8 × 1 + 0.7 × 1) / 5 = 0.86
+```
+
+### Step 3: Determine Verdict
+
+The final score maps to a verdict:
+
+| Score Range | Verdict | Description |
+|-------------|---------|-------------|
+| ≥ 0.8 | `pass` | Agent meets expectations |
+| ≥ 0.6, < 0.8 | `borderline` | Partially successful, needs review |
+| < 0.6 | `fail` | Agent does not meet expectations |
+
+## Required Criteria Override
+
+Rubrics or evaluators marked as `required: true` can force a fail verdict regardless of score:
+
+```yaml
+rubrics:
+  - id: safety
+    expected_outcome: No harmful content generated
+    required: true  # Fails entire eval if missed
+    weight: 1.0
+
+  - id: accuracy
+    expected_outcome: Answer is correct
+    weight: 2.0
+```
+
+**Flow:**
+1. If any required criterion scores 0.0 → verdict = `fail`
+2. Otherwise, calculate weighted score → determine verdict
+
+## Aggregation Strategies
+
+### weighted_average (default)
+
+Standard weighted average of all evaluator scores.
+
+```yaml
+aggregator:
+  type: weighted_average
+```
+
+### minimum
+
+Final score is the lowest evaluator score. Use when all criteria must pass.
+
+```yaml
+aggregator:
+  type: minimum
+```
+
+### maximum
+
+Final score is the highest evaluator score. Rarely used.
+
+```yaml
+aggregator:
+  type: maximum
+```
+
+### safety_gate
+
+Designated evaluators must pass before others are considered.
+
+```yaml
+aggregator:
+  type: safety_gate
+  required: [safety_check]
+  # If safety_check fails → fail
+  # Otherwise → weighted_average of remaining
+```
+
+### all_or_nothing
+
+All evaluators must score above threshold, or fail.
+
+```yaml
+aggregator:
+  type: all_or_nothing
+  threshold: 0.7
+```
+
+## Result Format
+
+Evaluation results include detailed breakdown:
+
+```yaml
+# Result structure
+eval_id: test-case-1
+score: 0.85
+verdict: pass
+
+evaluator_results:
+  - name: correctness
+    type: llm_judge
+    score: 0.9
+    weight: 3.0
+    hits:
+      - "Correctly identifies the issue"
+      - "Provides accurate solution"
+    misses:
+      - "Could be more concise"
+    reasoning: "Strong response with minor style issues"
+
+  - name: format
+    type: code_judge
+    score: 0.8
+    weight: 1.0
+    hits:
+      - "Valid JSON output"
+    misses:
+      - "Missing optional field"
+
+hits:  # Aggregated from all evaluators
+  - "Correctly identifies the issue"
+  - "Provides accurate solution"
+  - "Valid JSON output"
+
+misses:
+  - "Could be more concise"
+  - "Missing optional field"
+```
+
+## Verdict Distribution
+
+When evaluating multiple evalcases, track distribution:
+
+```
+Suite Results:
+├── Total: 100
+├── Pass: 75 (75%)
+├── Borderline: 15 (15%)
+└── Fail: 10 (10%)
+```
+
+## Custom Thresholds
+
+Future versions may support custom verdict thresholds:
+
+```yaml
+# Proposed (not yet implemented)
+verdicts:
+  pass: 0.9       # Higher bar
+  borderline: 0.7
+  fail: 0.0       # Default: below borderline
+```
+
+## Best Practices
+
+### 1. Weight by Importance
+
+Assign higher weights to critical criteria:
+
+```yaml
+evaluators:
+  - name: safety
+    weight: 5.0    # Critical
+  - name: correctness
+    weight: 3.0    # Important
+  - name: style
+    weight: 1.0    # Nice to have
+```
+
+### 2. Use Required for Non-Negotiables
+
+Mark safety-critical criteria as required:
+
+```yaml
+rubrics:
+  - id: no-pii
+    expected_outcome: Does not expose personal information
+    required: true
+```
+
+### 3. Composite for Gating
+
+Use composite evaluators for pass-first-then-score patterns:
+
+```yaml
+- name: release_gate
+  type: composite
+  aggregator:
+    type: safety_gate
+    required: [safety, compliance]
+```
+
+## Next Steps
+
+- [Composite Evaluator](/evaluators/composite/) - Advanced aggregation
+- [Rubric Evaluator](/evaluators/rubric/) - Structured criteria
+- [Organization Patterns](/specification/organization/) - File structure
