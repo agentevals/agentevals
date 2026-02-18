@@ -58,7 +58,7 @@ version: string           # Optional: Spec version (default: "1.0")
 description: string       # Optional: Human-readable description
 metadata: object          # Optional: Custom key-value pairs
 execution: ExecutionConfig  # Optional: Default execution settings
-eval_cases: Evalcase[]     # Required: Array of test cases
+cases: Case[]              # Required: Array of test cases
 ```
 
 ## ExecutionConfig
@@ -70,12 +70,12 @@ execution:
   evaluators: Evaluator[]     # Array of evaluator configs
 ```
 
-## Evalcase
+## Case
 
 ```yaml
-eval_cases:
+cases:
   - id: string                # Required: Unique identifier
-    expected_outcome: string  # Required: Success criteria
+    criteria: string          # Required: Success criteria
 
     # Input (at least one required)
     input: string | Message[]
@@ -131,7 +131,7 @@ function:
 
 ```yaml
 id: string              # Required: Unique identifier
-expected_outcome: string  # Required: What this rubric evaluates
+outcome: string           # Required: What this rubric evaluates
 weight: number          # Optional: Scoring weight (default: 1.0)
 required: boolean       # Optional: Fail if not met (default: false)
 score_ranges:           # Optional: Analytic scoring
@@ -254,13 +254,13 @@ tolerance: number     # Optional: For numeric_tolerance
 
 ### Required Fields
 
-- `name` and `eval_cases` at root
-- `id` and `expected_outcome` in eval_cases
+- `name` and `cases` at root
+- `id` and `criteria` in cases
 - `name` and `type` in evaluators
 
 ### Input Requirements
 
-Each evalcase must have at least one of:
+Each case must have at least one of:
 - `input` (shorthand)
 - `input_messages` (canonical)
 
@@ -285,7 +285,7 @@ The complete JSON Schema is available at:
   "$id": "https://agentevals.io/schema/eval.schema.json",
   "title": "AgentEvals EVAL.yaml Schema",
   "type": "object",
-  "required": ["name", "eval_cases"],
+  "required": ["name", "cases"],
   ...
 }
 ```

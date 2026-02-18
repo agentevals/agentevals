@@ -199,9 +199,9 @@ execution:
       max_tool_calls: 10
       max_duration_ms: 30000
 
-eval_cases:
+cases:
   - id: research-python
-    expected_outcome: |
+    criteria: |
       Agent searches for Python information, reads multiple sources,
       and synthesizes a comprehensive answer.
 
@@ -334,9 +334,9 @@ evaluators:
 ### 4. Document Tool Expectations
 
 ```yaml
-eval_cases:
+cases:
   - id: research
-    expected_outcome: |
+    criteria: |
       Agent should:
       1. Search for relevant information
       2. Read at least 2 documents

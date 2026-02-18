@@ -9,20 +9,20 @@ Multi-turn evaluation assesses agent performance across conversational exchanges
 
 ### Using conversation_id
 
-Group related eval_cases with `conversation_id`:
+Group related cases with `conversation_id`:
 
 ```yaml
-eval_cases:
+cases:
   - id: support-turn-1
     conversation_id: support-session
-    expected_outcome: Agent acknowledges request
+    criteria: Agent acknowledges request
     input:
       - role: user
         content: "I need help with my order"
 
   - id: support-turn-2
     conversation_id: support-session
-    expected_outcome: Agent provides order information
+    criteria: Agent provides order information
     input:
       - role: assistant
         content: "I'd be happy to help! Could you provide your order number?"
@@ -31,7 +31,7 @@ eval_cases:
 
   - id: support-turn-3
     conversation_id: support-session
-    expected_outcome: Agent resolves issue
+    criteria: Agent resolves issue
     input:
       - role: assistant
         content: "I found order #12345. I see it's delayed. Would you like me to expedite shipping?"
@@ -44,9 +44,9 @@ eval_cases:
 Include complete history in each turn:
 
 ```yaml
-eval_cases:
+cases:
   - id: final-turn
-    expected_outcome: Agent maintains context throughout
+    criteria: Agent maintains context throughout
     input:
       - role: system
         content: You are a helpful assistant.
@@ -83,9 +83,9 @@ execution:
 
         Score 1.0 if context maintained, 0.0 if lost.
 
-eval_cases:
+cases:
   - id: name-recall
-    expected_outcome: Agent remembers user's name
+    criteria: Agent remembers user's name
     input:
       - role: user
         content: "Hi, I'm Bob"
@@ -95,7 +95,7 @@ eval_cases:
         content: "What's my name?"
 
   - id: preference-recall
-    expected_outcome: Agent remembers user's preferences
+    criteria: Agent remembers user's preferences
     input:
       - role: user
         content: "I prefer Python over JavaScript"
@@ -179,18 +179,18 @@ execution:
       aggregator:
         type: weighted_average
 
-eval_cases:
+cases:
   # Complete conversation flow
   - id: password-reset-1
     conversation_id: password-reset
-    expected_outcome: Agent acknowledges password reset request
+    criteria: Agent acknowledges password reset request
     input:
       - role: user
         content: "I forgot my password"
 
   - id: password-reset-2
     conversation_id: password-reset
-    expected_outcome: Agent requests email for verification
+    criteria: Agent requests email for verification
     input:
       - role: assistant
         content: "I can help you reset your password. What email is associated with your account?"
@@ -199,7 +199,7 @@ eval_cases:
 
   - id: password-reset-3
     conversation_id: password-reset
-    expected_outcome: Agent confirms reset email sent
+    criteria: Agent confirms reset email sent
     input:
       - role: assistant
         content: "I found your account. I'm sending a password reset link to alice@example.com now."
@@ -208,7 +208,7 @@ eval_cases:
 
   # Context retention test
   - id: name-context
-    expected_outcome: Agent remembers and uses user's name
+    criteria: Agent remembers and uses user's name
     input:
       - role: user
         content: "My name is Charlie"
@@ -222,7 +222,7 @@ eval_cases:
 
   # Error recovery
   - id: clarification-flow
-    expected_outcome: Agent handles unclear request gracefully
+    criteria: Agent handles unclear request gracefully
     input:
       - role: user
         content: "It's not working"
@@ -241,7 +241,7 @@ eval_cases:
 ### Turn-Level Metrics
 
 ```yaml
-eval_cases:
+cases:
   - id: turn-3
     execution:
       evaluators:
@@ -289,9 +289,9 @@ execution:
         - tool: verify_identity
         - tool: perform_action
 
-eval_cases:
+cases:
   - id: account-lookup-flow
-    expected_outcome: Agent looks up account before action
+    criteria: Agent looks up account before action
     input:
       - role: user
         content: "Update my shipping address"
@@ -370,7 +370,7 @@ execution:
 ### 5. Use Realistic Scenarios
 
 ```yaml
-eval_cases:
+cases:
   - id: realistic-support
     note: |
       Based on actual support ticket patterns.

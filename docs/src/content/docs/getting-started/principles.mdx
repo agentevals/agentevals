@@ -20,14 +20,14 @@ AgentEvals is built on **agent-native architecture** principles. These principle
 ```yaml
 # Good: Tests real-world scenario
 - id: file-rename
-  expected_outcome: Agent renames file correctly
+  criteria: Agent renames file correctly
   input:
     - role: user
       content: "Rename config.json to settings.json"
 
 # Avoid: Artificial constraint
 - id: file-rename-limited
-  expected_outcome: Agent explains it cannot rename files
+  criteria: Agent explains it cannot rename files
   # Testing capability that should exist
 ```
 
@@ -105,7 +105,7 @@ execution:
 **Example:**
 ```yaml
 - id: summarize-and-translate
-  expected_outcome: |
+  criteria: |
     Agent summarizes the document and translates to Spanish.
     May accomplish this in any order or combine steps.
 

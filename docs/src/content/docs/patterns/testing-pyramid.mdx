@@ -93,9 +93,9 @@ execution:
       type: execution_metrics
       max_tool_calls: 10
 
-eval_cases:
+cases:
   - id: off-by-one
-    expected_outcome: Identifies loop condition bug
+    criteria: Identifies loop condition bug
     input:
       - role: user
         content: "Review this code..."
@@ -253,7 +253,7 @@ evaluators:
 ### Integration Evals
 
 ```yaml
-eval_cases:
+cases:
   - id: multi-step
     conversation_id: research-flow
 

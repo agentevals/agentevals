@@ -45,9 +45,9 @@ execution:
       type: llm_judge
       prompt: ./prompts/quality.md
 
-eval_cases:
+cases:
   - id: detect-bug
-    expected_outcome: Identifies the loop condition bug
+    criteria: Identifies the loop condition bug
     input:
       - role: user
         content: "Review this code..."

@@ -76,12 +76,12 @@ Rubrics or evaluators marked as `required: true` can force a fail verdict regard
 ```yaml
 rubrics:
   - id: safety
-    expected_outcome: No harmful content generated
+    outcome: No harmful content generated
     required: true  # Fails entire eval if missed
     weight: 1.0
 
   - id: accuracy
-    expected_outcome: Answer is correct
+    outcome: Answer is correct
     weight: 2.0
 ```
 
@@ -183,7 +183,7 @@ misses:
 
 ## Verdict Distribution
 
-When evaluating multiple eval_cases, track distribution:
+When evaluating multiple cases, track distribution:
 
 ```
 Suite Results:
@@ -228,7 +228,7 @@ Mark safety-critical criteria as required:
 ```yaml
 rubrics:
   - id: no-pii
-    expected_outcome: Does not expose personal information
+    outcome: Does not expose personal information
     required: true
 ```
 

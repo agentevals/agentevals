@@ -47,9 +47,9 @@ execution:
       max_tool_calls: 5
       max_duration_ms: 10000
 
-eval_cases:
+cases:
   - id: quick-lookup
-    expected_outcome: Agent finds answer efficiently
+    criteria: Agent finds answer efficiently
     input: "What is the capital of France?"
 ```
 
@@ -85,9 +85,9 @@ execution:
 Different bounds for different eval cases:
 
 ```yaml
-eval_cases:
+cases:
   - id: simple-query
-    expected_outcome: Quick response
+    criteria: Quick response
     input: "Hello!"
     execution:
       evaluators:
@@ -97,7 +97,7 @@ eval_cases:
           max_tool_calls: 0
 
   - id: complex-research
-    expected_outcome: Thorough research
+    criteria: Thorough research
     input: "Compare Python vs JavaScript for web development"
     execution:
       evaluators:
@@ -265,7 +265,7 @@ max_duration_ms: 45000  # P95 was 38000
 ### 2. Different Bounds for Different Tasks
 
 ```yaml
-eval_cases:
+cases:
   - id: simple
     execution:
       evaluators:
