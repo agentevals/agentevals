@@ -47,7 +47,7 @@ execution:
       max_tool_calls: 5
       max_duration_ms: 10000
 
-evalcases:
+eval_cases:
   - id: quick-lookup
     expected_outcome: Agent finds answer efficiently
     input: "What is the capital of France?"
@@ -85,7 +85,7 @@ execution:
 Different bounds for different eval cases:
 
 ```yaml
-evalcases:
+eval_cases:
   - id: simple-query
     expected_outcome: Quick response
     input: "Hello!"
@@ -265,7 +265,7 @@ max_duration_ms: 45000  # P95 was 38000
 ### 2. Different Bounds for Different Tasks
 
 ```yaml
-evalcases:
+eval_cases:
   - id: simple
     execution:
       evaluators:

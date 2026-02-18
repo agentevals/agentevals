@@ -41,7 +41,7 @@ Unique identifier within the EVAL.yaml file.
 - **Constraints:** Must be unique within the file
 
 ```yaml
-evalcases:
+eval_cases:
   - id: greeting-response
   - id: error-handling
   - id: edge-case-empty-input
@@ -203,7 +203,7 @@ score_ranges:             # Analytic scoring (0-10 scale)
 Per-evalcase execution override.
 
 ```yaml
-evalcases:
+eval_cases:
   - id: slow-task
     expected_outcome: Completes analysis
     input: "Analyze this large dataset..."
@@ -221,7 +221,7 @@ evalcases:
 Groups related multi-turn test cases.
 
 ```yaml
-evalcases:
+eval_cases:
   - id: turn-1
     conversation_id: support-flow
     input:

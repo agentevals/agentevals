@@ -10,7 +10,7 @@ The `EVAL.yaml` file is the primary specification file for defining agent evalua
 ```yaml
 # Required fields
 name: string                    # Unique identifier
-evalcases: Evalcase[]           # Array of test cases
+eval_cases: Evalcase[]           # Array of test cases
 
 # Optional fields
 version: string                 # Spec version (default: "1.0")
@@ -48,7 +48,7 @@ execution:
       script: ["python", "./judges/format.py"]
       weight: 1.0
 
-evalcases:
+eval_cases:
   - id: detect-off-by-one
     description: Detect classic off-by-one loop error
     expected_outcome: |
@@ -144,7 +144,7 @@ metadata:
 
 ### execution
 
-Default execution settings for all evalcases.
+Default execution settings for all eval_cases.
 
 - **Type:** `ExecutionConfig`
 
@@ -160,7 +160,7 @@ execution:
 
 See [Evaluators](/specification/evaluators/) for evaluator configuration.
 
-### evalcases (required)
+### eval_cases (required)
 
 Array of evaluation cases.
 
@@ -183,7 +183,7 @@ execution:
       script: ["python", "./judges/check.py"]
       # Resolves to: /project/evals/code-review/judges/check.py
 
-evalcases:
+eval_cases:
   - id: example
     input:
       - role: user

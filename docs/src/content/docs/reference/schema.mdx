@@ -58,7 +58,7 @@ version: string           # Optional: Spec version (default: "1.0")
 description: string       # Optional: Human-readable description
 metadata: object          # Optional: Custom key-value pairs
 execution: ExecutionConfig  # Optional: Default execution settings
-evalcases: Evalcase[]     # Required: Array of test cases
+eval_cases: Evalcase[]     # Required: Array of test cases
 ```
 
 ## ExecutionConfig
@@ -73,7 +73,7 @@ execution:
 ## Evalcase
 
 ```yaml
-evalcases:
+eval_cases:
   - id: string                # Required: Unique identifier
     expected_outcome: string  # Required: Success criteria
 
@@ -254,8 +254,8 @@ tolerance: number     # Optional: For numeric_tolerance
 
 ### Required Fields
 
-- `name` and `evalcases` at root
-- `id` and `expected_outcome` in evalcases
+- `name` and `eval_cases` at root
+- `id` and `expected_outcome` in eval_cases
 - `name` and `type` in evaluators
 
 ### Input Requirements
@@ -285,7 +285,7 @@ The complete JSON Schema is available at:
   "$id": "https://agentevals.io/schema/eval.schema.json",
   "title": "AgentEvals EVAL.yaml Schema",
   "type": "object",
-  "required": ["name", "evalcases"],
+  "required": ["name", "eval_cases"],
   ...
 }
 ```
