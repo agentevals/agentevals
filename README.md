@@ -32,7 +32,7 @@ execution:
       type: llm_judge
       prompt: ./prompts/correctness.md
 
-evalcases:
+eval_cases:
   - id: detect-off-by-one
     expected_outcome: Identifies loop condition bug
     input:

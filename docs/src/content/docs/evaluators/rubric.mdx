@@ -119,7 +119,7 @@ execution:
           expected_outcome: Identifies security implications
           weight: 2.0
 
-evalcases:
+eval_cases:
   - id: sql-injection
     expected_outcome: Identifies SQL injection vulnerability
     input:
@@ -233,7 +233,7 @@ Intermediate values are interpolated linearly.
 ### Inline (per evalcase)
 
 ```yaml
-evalcases:
+eval_cases:
   - id: greeting
     expected_outcome: Friendly greeting
     input: "Hello!"
@@ -255,7 +255,7 @@ execution:
         - id: accuracy
           expected_outcome: Accurate information
 
-evalcases:
+eval_cases:
   - id: case-1
     # Uses shared_rubric evaluator
 ```
@@ -271,7 +271,7 @@ execution:
         - id: tone
           expected_outcome: Professional
 
-evalcases:
+eval_cases:
   - id: specific-case
     rubrics:
       # Additional case-specific rubrics
