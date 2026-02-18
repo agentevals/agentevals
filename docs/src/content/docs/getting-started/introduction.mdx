@@ -36,20 +36,20 @@ name: my-agent-eval
 version: "1.0"
 description: Evaluates my agent capabilities
 
-eval_cases:
+cases:
   - id: basic-task
-    expected_outcome: Agent completes the task correctly
+    criteria: Agent completes the task correctly
     input:
       - role: user
         content: "Perform this task..."
 ```
 
-### Evalcases
+### Cases
 
-Individual test cases within an evaluation suite. Each evalcase defines:
+Individual test cases within an evaluation suite. Each case defines:
 
 - **Input** - What to send to the agent
-- **Expected outcome** - Natural language description of success
+- **Criteria** - Natural language description of success
 - **Evaluators** - How to measure success (optional, can inherit from suite)
 
 ### Evaluators

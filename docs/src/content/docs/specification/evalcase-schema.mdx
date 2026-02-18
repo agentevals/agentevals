@@ -1,16 +1,16 @@
 ---
-title: Evalcase Schema
+title: Case Schema
 description: Schema reference for evaluation cases
 ---
 
-An **evalcase** is a single test case within an evaluation suite. Each evalcase defines an input, expected outcome, and optionally how to evaluate the result.
+A **case** is a single test case within an evaluation suite. Each case defines an input, criteria, and optionally how to evaluate the result.
 
 ## Schema
 
 ```yaml
 # Required fields
 id: string                      # Unique identifier within file
-expected_outcome: string        # Natural language success criteria
+criteria: string                # Natural language success criteria
 
 # Input (at least one required)
 input: string | Message[]       # Input to the agent
@@ -41,13 +41,13 @@ Unique identifier within the EVAL.yaml file.
 - **Constraints:** Must be unique within the file
 
 ```yaml
-eval_cases:
+cases:
   - id: greeting-response
   - id: error-handling
   - id: edge-case-empty-input
 ```
 
-### expected_outcome (required)
+### criteria (required)
 
 Natural language description of what constitutes success.
 
@@ -55,7 +55,7 @@ Natural language description of what constitutes success.
 - **Purpose:** Used by LLM judges and for documentation
 
 ```yaml
-expected_outcome: |
+criteria: |
   Agent correctly identifies the off-by-one bug in the loop condition
   and provides an accurate fix with clear explanation.
 ```
@@ -172,12 +172,12 @@ rubrics:
 ```yaml
 rubrics:
   - id: name-mention
-    expected_outcome: Response includes "Alice"
+    outcome: Response includes "Alice"
     weight: 2.0
     required: true
 
   - id: greeting
-    expected_outcome: Contains a greeting phrase
+    outcome: Contains a greeting phrase
     weight: 1.0
     score_ranges:
       0: No greeting present
@@ -189,7 +189,7 @@ rubrics:
 
 ```yaml
 id: string                # Unique identifier
-expected_outcome: string  # What this rubric checks
+outcome: string           # What this rubric checks
 weight: number            # Scoring weight (default: 1.0)
 required: boolean         # If true, fail verdict if missed
 score_ranges:             # Analytic scoring (0-10 scale)
@@ -200,12 +200,12 @@ score_ranges:             # Analytic scoring (0-10 scale)
 
 ### execution
 
-Per-evalcase execution override.
+Per-case execution override.
 
 ```yaml
-eval_cases:
+cases:
   - id: slow-task
-    expected_outcome: Completes analysis
+    criteria: Completes analysis
     input: "Analyze this large dataset..."
     execution:
       timeout_seconds: 600    # Override default timeout
@@ -221,7 +221,7 @@ eval_cases:
 Groups related multi-turn test cases.
 
 ```yaml
-eval_cases:
+cases:
   - id: turn-1
     conversation_id: support-flow
     input:
@@ -248,7 +248,7 @@ Human-readable description for documentation.
   description: |
     Tests handling of null input values.
     This edge case should be handled gracefully.
-  expected_outcome: Returns appropriate error message
+  criteria: Returns appropriate error message
 ```
 
 ### note
@@ -257,7 +257,7 @@ Test-specific context provided to evaluators.
 
 ```yaml
 - id: regional-date
-  expected_outcome: Parses date correctly
+  criteria: Parses date correctly
   note: |
     The date format is DD/MM/YYYY (European format).
     Agent should not assume US format.
@@ -268,22 +268,22 @@ Test-specific context provided to evaluators.
 
 ## Complete Examples
 
-### Basic Evalcase
+### Basic Case
 
 ```yaml
 - id: simple-greeting
-  expected_outcome: Agent responds with a greeting
+  criteria: Agent responds with a greeting
   input: "Hello!"
   rubrics:
     - Contains a greeting word
 ```
 
-### Complex Evalcase
+### Complex Case
 
 ```yaml
 - id: code-review-security
   description: Tests security vulnerability detection
-  expected_outcome: |
+  criteria: |
     Agent identifies SQL injection vulnerability and suggests
     parameterized queries as the fix.
 
@@ -307,16 +307,16 @@ Test-specific context provided to evaluators.
 
   rubrics:
     - id: identifies-vuln
-      expected_outcome: Identifies SQL injection
+      outcome: Identifies SQL injection
       weight: 3.0
       required: true
 
     - id: suggests-fix
-      expected_outcome: Suggests parameterized queries
+      outcome: Suggests parameterized queries
       weight: 2.0
 
     - id: explains-risk
-      expected_outcome: Explains potential impact
+      outcome: Explains potential impact
       weight: 1.0
 
   execution:

@@ -20,7 +20,7 @@ AgentEvals is designed with these goals:
 | Component | File | Description |
 |-----------|------|-------------|
 | [EVAL Format](/specification/eval-format/) | `EVAL.yaml` | Main evaluation file structure |
-| [Evalcase Schema](/specification/evalcase-schema/) | Within EVAL.yaml | Individual test case definition |
+| [Case Schema](/specification/evalcase-schema/) | Within EVAL.yaml | Individual test case definition |
 | [Evaluators](/specification/evaluators/) | Referenced | Assessment components |
 | [Verdicts](/specification/verdicts/) | Results | Pass/borderline/fail determination |
 | [Organization](/specification/organization/) | Directory | File organization patterns |
@@ -46,9 +46,9 @@ execution:
       type: llm_judge
       prompt: ./prompts/quality.md
 
-eval_cases:
+cases:
   - id: test-case-1
-    expected_outcome: Agent accomplishes the task
+    criteria: Agent accomplishes the task
     input:
       - role: user
         content: "Perform this task"
@@ -74,5 +74,5 @@ The specification follows semantic versioning:
 ## Next Steps
 
 - [EVAL Format](/specification/eval-format/) - Detailed file format
-- [Evalcase Schema](/specification/evalcase-schema/) - Test case structure
+- [Case Schema](/specification/evalcase-schema/) - Test case structure
 - [Evaluators Reference](/specification/evaluators/) - Evaluator type overview

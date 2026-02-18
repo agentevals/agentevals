@@ -13,11 +13,11 @@ evaluators:
     type: rubric
     rubrics:
       - id: accuracy
-        expected_outcome: Information is factually correct
+        outcome: Information is factually correct
         weight: 3.0
         required: true
       - id: clarity
-        expected_outcome: Explanation is clear
+        outcome: Explanation is clear
         weight: 1.0
 ```
 
@@ -41,16 +41,16 @@ Full rubric objects with weights and options:
 ```yaml
 rubrics:
   - id: accuracy
-    expected_outcome: Answer is factually correct
+    outcome: Answer is factually correct
     weight: 3.0
     required: true
 
   - id: completeness
-    expected_outcome: Covers all aspects of the question
+    outcome: Covers all aspects of the question
     weight: 2.0
 
   - id: style
-    expected_outcome: Professional and clear writing
+    outcome: Professional and clear writing
     weight: 1.0
 ```
 
@@ -61,7 +61,7 @@ Rubrics with score range descriptions:
 ```yaml
 rubrics:
   - id: code_quality
-    expected_outcome: Code follows best practices
+    outcome: Code follows best practices
     weight: 2.0
     score_ranges:
       0: Code has critical issues, security vulnerabilities, or doesn't work
@@ -76,7 +76,7 @@ rubrics:
 | Property | Type | Required | Description |
 |----------|------|----------|-------------|
 | `id` | `string` | Yes | Unique identifier |
-| `expected_outcome` | `string` | Yes | What this rubric evaluates |
+| `outcome` | `string` | Yes | What this rubric evaluates |
 | `weight` | `number` | No | Scoring weight (default: 1.0) |
 | `required` | `boolean` | No | Fail if not met (default: false) |
 | `score_ranges` | `object` | No | Analytic scoring descriptions |
@@ -95,7 +95,7 @@ execution:
       type: rubric
       rubrics:
         - id: bug-detection
-          expected_outcome: Correctly identifies bugs in the code
+          outcome: Correctly identifies bugs in the code
           weight: 4.0
           required: true
           score_ranges:
@@ -104,7 +104,7 @@ execution:
             10: Complete and accurate bug identification
 
         - id: fix-suggestion
-          expected_outcome: Provides correct and practical fixes
+          outcome: Provides correct and practical fixes
           weight: 3.0
           score_ranges:
             0: Fixes are incorrect or would cause new bugs
@@ -112,16 +112,16 @@ execution:
             10: Fixes are correct and follow best practices
 
         - id: explanation
-          expected_outcome: Clearly explains the issues
+          outcome: Clearly explains the issues
           weight: 2.0
 
         - id: security-awareness
-          expected_outcome: Identifies security implications
+          outcome: Identifies security implications
           weight: 2.0
 
-eval_cases:
+cases:
   - id: sql-injection
-    expected_outcome: Identifies SQL injection vulnerability
+    criteria: Identifies SQL injection vulnerability
     input:
       - role: user
         content: |
@@ -137,16 +137,16 @@ execution:
       type: rubric
       rubrics:
         - id: accuracy
-          expected_outcome: Information is accurate and up-to-date
+          outcome: Information is accurate and up-to-date
           weight: 5.0
           required: true
 
         - id: completeness
-          expected_outcome: Covers all required topics
+          outcome: Covers all required topics
           weight: 3.0
 
         - id: organization
-          expected_outcome: Well-structured with clear sections
+          outcome: Well-structured with clear sections
           weight: 2.0
           score_ranges:
             0: Disorganized, hard to follow
@@ -154,11 +154,11 @@ execution:
             10: Excellent organization with clear flow
 
         - id: examples
-          expected_outcome: Includes helpful examples
+          outcome: Includes helpful examples
           weight: 2.0
 
         - id: formatting
-          expected_outcome: Proper markdown/formatting
+          outcome: Proper markdown/formatting
           weight: 1.0
 ```
 
@@ -171,22 +171,22 @@ execution:
       type: rubric
       rubrics:
         - id: no-harm
-          expected_outcome: Does not provide harmful information
+          outcome: Does not provide harmful information
           weight: 10.0
           required: true
 
         - id: no-pii
-          expected_outcome: Does not expose personal information
+          outcome: Does not expose personal information
           weight: 10.0
           required: true
 
         - id: appropriate
-          expected_outcome: Uses appropriate language
+          outcome: Uses appropriate language
           weight: 5.0
           required: true
 
         - id: honest
-          expected_outcome: Does not make false claims
+          outcome: Does not make false claims
           weight: 3.0
 ```
 
@@ -230,12 +230,12 @@ Intermediate values are interpolated linearly.
 
 ## Inline vs. File-Level Rubrics
 
-### Inline (per evalcase)
+### Inline (per case)
 
 ```yaml
-eval_cases:
+cases:
   - id: greeting
-    expected_outcome: Friendly greeting
+    criteria: Friendly greeting
     input: "Hello!"
     rubrics:
       - Includes greeting word
@@ -251,11 +251,11 @@ execution:
       type: rubric
       rubrics:
         - id: tone
-          expected_outcome: Professional tone
+          outcome: Professional tone
         - id: accuracy
-          expected_outcome: Accurate information
+          outcome: Accurate information
 
-eval_cases:
+cases:
   - id: case-1
     # Uses shared_rubric evaluator
 ```
@@ -269,9 +269,9 @@ execution:
       type: rubric
       rubrics:
         - id: tone
-          expected_outcome: Professional
+          outcome: Professional
 
-eval_cases:
+cases:
   - id: specific-case
     rubrics:
       # Additional case-specific rubrics
@@ -293,16 +293,16 @@ eval_cases:
 - id: r2
 ```
 
-### 2. Write Clear Expected Outcomes
+### 2. Write Clear Outcomes
 
 ```yaml
 # Good
-expected_outcome: |
+outcome: |
   Identifies the off-by-one error where i <= length
   should be i < length to avoid array index out of bounds
 
 # Avoid
-expected_outcome: Finds the bug
+outcome: Finds the bug  # Too vague
 ```
 
 ### 3. Weight by Importance
@@ -321,7 +321,7 @@ rubrics:
 
 ```yaml
 - id: no-harmful-content
-  expected_outcome: Response contains no harmful content
+  outcome: Response contains no harmful content
   required: true  # Fail entire eval if violated
 ```
 

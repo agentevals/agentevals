@@ -22,8 +22,8 @@ The primary file format for defining evaluation suites in the AgentEvals specifi
 
 ## Evaluation Components
 
-### Evalcase
-A single test case within an evaluation suite. Contains input, expected outcome, and evaluation criteria.
+### Case
+A single test case within an evaluation suite. Contains input, criteria, and evaluation configuration.
 
 ### Evaluator
 A component that assesses agent output. Types include `code_judge`, `llm_judge`, `rubric`, `composite`, `tool_trajectory`, `field_accuracy`, and `execution_metrics`.
@@ -125,7 +125,7 @@ Storing all evaluations in a single `evals/` directory.
 Storing evaluations alongside skills in `skills/*/evals/`.
 
 ### Dataset
-A collection of eval_cases, either in YAML or JSONL format.
+A collection of cases, either in YAML or JSONL format.
 
 ## Patterns
 
@@ -139,7 +139,7 @@ A pattern ensuring critical safety checks pass before quality evaluation.
 Evaluation of conversations spanning multiple exchanges.
 
 ### Conversation ID
-An identifier grouping related eval_cases in a multi-turn conversation.
+An identifier grouping related cases in a multi-turn conversation.
 
 ## Agent-Native Principles
 

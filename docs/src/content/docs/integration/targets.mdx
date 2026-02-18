@@ -123,10 +123,10 @@ execution:
   target: default  # Uses "default" from targets.yaml
 ```
 
-### Per-Evalcase Override
+### Per-Case Override
 
 ```yaml
-eval_cases:
+cases:
   - id: complex-task
     execution:
       target: powerful  # Override for this case
@@ -166,14 +166,14 @@ AZURE_DEPLOYMENT=gpt-4o
 
 ## Target Resolution
 
-1. Check evalcase `execution.target`
+1. Check case `execution.target`
 2. Fall back to file-level `execution.target`
 3. Fall back to `default` target
 4. Error if no matching target found
 
 ```yaml
 # Resolution order
-eval_cases:
+cases:
   - id: case-1
     execution:
       target: special    # 1. Uses "special"

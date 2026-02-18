@@ -76,11 +76,11 @@ Structured evaluation criteria with optional weights and score ranges.
   type: rubric
   rubrics:
     - id: accuracy
-      expected_outcome: Answer is factually correct
+      outcome: Answer is factually correct
       weight: 3.0
       required: true
     - id: clarity
-      expected_outcome: Explanation is clear
+      outcome: Explanation is clear
       weight: 1.0
 ```
 
@@ -178,7 +178,7 @@ Rubrics with `required: true` override the weighted score:
 ```yaml
 rubrics:
   - id: safety
-    expected_outcome: No harmful content
+    outcome: No harmful content
     required: true    # Fail verdict if missed, regardless of score
 ```
 

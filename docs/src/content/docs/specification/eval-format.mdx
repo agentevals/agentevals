@@ -10,7 +10,7 @@ The `EVAL.yaml` file is the primary specification file for defining agent evalua
 ```yaml
 # Required fields
 name: string                    # Unique identifier
-eval_cases: Evalcase[]           # Array of test cases
+cases: Case[]                    # Array of test cases
 
 # Optional fields
 version: string                 # Spec version (default: "1.0")
@@ -48,10 +48,10 @@ execution:
       script: ["python", "./judges/format.py"]
       weight: 1.0
 
-eval_cases:
+cases:
   - id: detect-off-by-one
     description: Detect classic off-by-one loop error
-    expected_outcome: |
+    criteria: |
       Identifies the loop condition bug where i < 0 should be i < items.length
     input:
       - role: system
@@ -144,7 +144,7 @@ metadata:
 
 ### execution
 
-Default execution settings for all eval_cases.
+Default execution settings for all cases.
 
 - **Type:** `ExecutionConfig`
 
@@ -160,14 +160,14 @@ execution:
 
 See [Evaluators](/specification/evaluators/) for evaluator configuration.
 
-### eval_cases (required)
+### cases (required)
 
 Array of evaluation cases.
 
-- **Type:** `Evalcase[]`
+- **Type:** `Case[]`
 - **Min items:** 1
 
-See [Evalcase Schema](/specification/evalcase-schema/) for full schema.
+See [Case Schema](/specification/evalcase-schema/) for full schema.
 
 ## File Resolution
 
@@ -183,7 +183,7 @@ execution:
       script: ["python", "./judges/check.py"]
       # Resolves to: /project/evals/code-review/judges/check.py
 
-eval_cases:
+cases:
   - id: example
     input:
       - role: user
@@ -204,12 +204,12 @@ content:
 
 ## JSONL Format
 
-For large evaluations, use JSONL format with one evalcase per line:
+For large evaluations, use JSONL format with one case per line:
 
 **dataset.jsonl:**
 ```jsonl
-{"id": "case-1", "expected_outcome": "...", "input": [{"role": "user", "content": "..."}]}
-{"id": "case-2", "expected_outcome": "...", "input": [{"role": "user", "content": "..."}]}
+{"id": "case-1", "criteria": "...", "input": [{"role": "user", "content": "..."}]}
+{"id": "case-2", "criteria": "...", "input": [{"role": "user", "content": "..."}]}
 ```
 
 **dataset.yaml** (sidecar for shared config):
@@ -236,6 +236,6 @@ npx ajv validate -s eval.schema.json -d EVAL.yaml
 
 ## Next Steps
 
-- [Evalcase Schema](/specification/evalcase-schema/) - Individual case structure
+- [Case Schema](/specification/evalcase-schema/) - Individual case structure
 - [Evaluators](/specification/evaluators/) - Evaluator configuration
 - [Organization](/specification/organization/) - File organization patterns

@@ -36,7 +36,7 @@ LLM judge prompts can use these template variables:
 | Variable | Description |
 |----------|-------------|
 | `{{question}}` | The user's input/question |
-| `{{expected_outcome}}` | Natural language success criteria |
+| `{{criteria}}` | Natural language success criteria |
 | `{{candidate_answer}}` | The agent's response |
 | `{{reference_answer}}` | Expected output if provided |
 | `{{input_messages}}` | Full input message history |
@@ -56,8 +56,8 @@ Evaluate the quality of this response.
 ## Response
 {{candidate_answer}}
 
-## Expected Outcome
-{{expected_outcome}}
+## Criteria
+{{criteria}}
 
 ## Evaluation Criteria
 1. **Accuracy**: Is the information correct?
@@ -113,8 +113,8 @@ You are an expert code reviewer evaluating an AI agent's code review.
 ## Agent's Review
 {{candidate_answer}}
 
-## Expected Outcome
-{{expected_outcome}}
+## Criteria
+{{criteria}}
 
 ## Evaluation Rubric
 
@@ -206,9 +206,9 @@ execution:
       prompt: ./prompts/quality.md
       weight: 1.0
 
-eval_cases:
+cases:
   - id: factual-question
-    expected_outcome: Provides accurate factual answer
+    criteria: Provides accurate factual answer
     input: "What is the capital of France?"
 ```
 

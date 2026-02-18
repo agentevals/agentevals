@@ -32,9 +32,9 @@ execution:
       type: llm_judge
       prompt: ./prompts/correctness.md
 
-eval_cases:
+cases:
   - id: detect-off-by-one
-    expected_outcome: Identifies loop condition bug
+    criteria: Identifies loop condition bug
     input:
       - role: user
         content: "Review this JavaScript function..."
