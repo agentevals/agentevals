@@ -66,7 +66,7 @@ AgentEvals produces structured results in JSONL format, enabling analysis, track
 | Field | Type | Description |
 |-------|------|-------------|
 | `timestamp` | `string` | ISO 8601 timestamp |
-| `evalId` | `string` | Case ID |
+| `evalId` | `string` | Test ID |
 | `dataset` | `string` | EVAL name |
 | `score` | `number` | Final score (0-1) |
 | `verdict` | `string` | pass / borderline / fail |
@@ -135,7 +135,7 @@ cat results.jsonl | jq -s 'group_by(.verdict) | map({verdict: .[0].verdict, coun
 # Average score
 cat results.jsonl | jq -s 'map(.score) | add / length'
 
-# Failed cases
+# Failed tests
 cat results.jsonl | jq 'select(.verdict == "fail")'
 
 # Top misses

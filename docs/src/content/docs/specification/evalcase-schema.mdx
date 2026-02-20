@@ -1,9 +1,9 @@
 ---
-title: Case Schema
-description: Schema reference for evaluation cases
+title: Test Schema
+description: Schema reference for tests
 ---
 
-A **case** is a single test case within an evaluation suite. Each case defines an input, criteria, and optionally how to evaluate the result.
+A **test** is a single test within an evaluation suite. Each test defines an input, criteria, and optionally how to evaluate the result.
 
 ## Schema
 
@@ -22,11 +22,11 @@ expected_messages: Message[]    # Canonical form
 
 # Evaluation (optional)
 rubrics: (string | Rubric)[]    # Inline evaluation criteria
-execution: ExecutionConfig      # Per-case execution override
+execution: ExecutionConfig      # Per-test execution override
 
 # Metadata (optional)
 description: string             # Human-readable description
-conversation_id: string         # Groups related multi-turn cases
+conversation_id: string         # Groups related multi-turn tests
 note: string                    # Test-specific context
 metadata: object                # Custom key-value pairs
 ```
@@ -41,7 +41,7 @@ Unique identifier within the EVAL.yaml file.
 - **Constraints:** Must be unique within the file
 
 ```yaml
-cases:
+tests:
   - id: greeting-response
   - id: error-handling
   - id: edge-case-empty-input
@@ -200,10 +200,10 @@ score_ranges:             # Analytic scoring (0-10 scale)
 
 ### execution
 
-Per-case execution override.
+Per-test execution override.
 
 ```yaml
-cases:
+tests:
   - id: slow-task
     criteria: Completes analysis
     input: "Analyze this large dataset..."
@@ -218,10 +218,10 @@ cases:
 
 ### conversation_id
 
-Groups related multi-turn test cases.
+Groups related multi-turn tests.
 
 ```yaml
-cases:
+tests:
   - id: turn-1
     conversation_id: support-flow
     input:
@@ -268,7 +268,7 @@ Test-specific context provided to evaluators.
 
 ## Complete Examples
 
-### Basic Case
+### Basic Test
 
 ```yaml
 - id: simple-greeting
@@ -278,7 +278,7 @@ Test-specific context provided to evaluators.
     - Contains a greeting word
 ```
 
-### Complex Case
+### Complex Test
 
 ```yaml
 - id: code-review-security

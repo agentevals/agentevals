@@ -10,7 +10,7 @@ The `EVAL.yaml` file is the primary specification file for defining agent evalua
 ```yaml
 # Required fields
 name: string                    # Unique identifier
-cases: Case[]                    # Array of test cases
+tests: Test[]                    # Array of tests
 
 # Optional fields
 version: string                 # Spec version (default: "1.0")
@@ -48,7 +48,7 @@ execution:
       script: ["python", "./judges/format.py"]
       weight: 1.0
 
-cases:
+tests:
   - id: detect-off-by-one
     description: Detect classic off-by-one loop error
     criteria: |
@@ -144,7 +144,7 @@ metadata:
 
 ### execution
 
-Default execution settings for all cases.
+Default execution settings for all tests.
 
 - **Type:** `ExecutionConfig`
 
@@ -160,14 +160,14 @@ execution:
 
 See [Evaluators](/specification/evaluators/) for evaluator configuration.
 
-### cases (required)
+### tests (required)
 
-Array of evaluation cases.
+Array of tests.
 
-- **Type:** `Case[]`
+- **Type:** `Test[]`
 - **Min items:** 1
 
-See [Case Schema](/specification/evalcase-schema/) for full schema.
+See [Test Schema](/specification/case-schema/) for full schema.
 
 ## File Resolution
 
@@ -183,7 +183,7 @@ execution:
       script: ["python", "./judges/check.py"]
       # Resolves to: /project/evals/code-review/judges/check.py
 
-cases:
+tests:
   - id: example
     input:
       - role: user
@@ -204,7 +204,7 @@ content:
 
 ## JSONL Format
 
-For large evaluations, use JSONL format with one case per line:
+For large evaluations, use JSONL format with one test per line:
 
 **dataset.jsonl:**
 ```jsonl
@@ -236,6 +236,10 @@ npx ajv validate -s eval.schema.json -d EVAL.yaml
 
 ## Next Steps
 
+<<<<<<< HEAD
 - [Case Schema](/specification/evalcase-schema/) - Individual case structure
+=======
+- [Test Schema](/specification/case-schema/) - Individual test structure
+>>>>>>> 205c288 (Rename cases to tests in EVAL schema for LLM training data alignment)
 - [Evaluators](/specification/evaluators/) - Evaluator configuration
 - [Organization](/specification/organization/) - File organization patterns

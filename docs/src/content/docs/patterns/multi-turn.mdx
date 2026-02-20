@@ -9,10 +9,10 @@ Multi-turn evaluation assesses agent performance across conversational exchanges
 
 ### Using conversation_id
 
-Group related cases with `conversation_id`:
+Group related tests with `conversation_id`:
 
 ```yaml
-cases:
+tests:
   - id: support-turn-1
     conversation_id: support-session
     criteria: Agent acknowledges request
@@ -44,7 +44,7 @@ cases:
 Include complete history in each turn:
 
 ```yaml
-cases:
+tests:
   - id: final-turn
     criteria: Agent maintains context throughout
     input:
@@ -83,7 +83,7 @@ execution:
 
         Score 1.0 if context maintained, 0.0 if lost.
 
-cases:
+tests:
   - id: name-recall
     criteria: Agent remembers user's name
     input:
@@ -179,7 +179,7 @@ execution:
       aggregator:
         type: weighted_average
 
-cases:
+tests:
   # Complete conversation flow
   - id: password-reset-1
     conversation_id: password-reset
@@ -241,7 +241,7 @@ cases:
 ### Turn-Level Metrics
 
 ```yaml
-cases:
+tests:
   - id: turn-3
     execution:
       evaluators:
@@ -289,7 +289,7 @@ execution:
         - tool: verify_identity
         - tool: perform_action
 
-cases:
+tests:
   - id: account-lookup-flow
     criteria: Agent looks up account before action
     input:
@@ -370,7 +370,7 @@ execution:
 ### 5. Use Realistic Scenarios
 
 ```yaml
-cases:
+tests:
   - id: realistic-support
     note: |
       Based on actual support ticket patterns.

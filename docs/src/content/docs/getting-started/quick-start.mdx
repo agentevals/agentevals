@@ -20,7 +20,7 @@ name: hello-world-eval
 version: "1.0"
 description: A simple evaluation to verify agent responses
 
-cases:
+tests:
   - id: greeting-response
     criteria: |
       Agent responds with a friendly greeting that includes the user's name
@@ -62,7 +62,7 @@ execution:
         Score 0.5 if partially correct.
         Score 0.0 if fails basic requirements.
 
-cases:
+tests:
   - id: greeting-response
     criteria: |
       Agent responds with a friendly greeting that includes the user's name

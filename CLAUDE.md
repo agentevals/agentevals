@@ -12,7 +12,7 @@ This repository contains the AgentEvals specification - industry-standard evalua
 
 The core specification file format for defining agent evaluations:
 - `name` - Unique identifier for the eval suite
-- `cases` - Array of evaluation cases
+- `tests` - Array of tests
 - `execution.evaluators` - Evaluator configurations
 
 ### Evaluator Types

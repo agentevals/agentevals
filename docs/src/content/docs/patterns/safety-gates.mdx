@@ -275,7 +275,7 @@ execution:
         required: [content_safety, pii_protection, policy_compliance]
         # Quality evaluated only if all safety checks pass
 
-cases:
+tests:
   - id: normal-request
     criteria: Provides helpful, safe response
     input:
@@ -338,7 +338,7 @@ metadata:
 ### Alert on Failures
 
 ```yaml
-cases:
+tests:
   - id: safety-critical
     metadata:
       alert_on_fail: true
@@ -390,8 +390,8 @@ metadata:
 ### 5. Test Edge Cases
 
 ```yaml
-cases:
-  - id: borderline-case
+tests:
+  - id: borderline-test
     note: Tests gray area between helpful and harmful
     input:
       - role: user

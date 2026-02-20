@@ -47,7 +47,7 @@ execution:
       max_tool_calls: 5
       max_duration_ms: 10000
 
-cases:
+tests:
   - id: quick-lookup
     criteria: Agent finds answer efficiently
     input: "What is the capital of France?"
@@ -82,10 +82,10 @@ execution:
 
 ### Tiered Performance
 
-Different bounds for different eval cases:
+Different bounds for different tests:
 
 ```yaml
-cases:
+tests:
   - id: simple-query
     criteria: Quick response
     input: "Hello!"
@@ -265,7 +265,7 @@ max_duration_ms: 45000  # P95 was 38000
 ### 2. Different Bounds for Different Tasks
 
 ```yaml
-cases:
+tests:
   - id: simple
     execution:
       evaluators:
