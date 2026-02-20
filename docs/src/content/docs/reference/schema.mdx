@@ -58,7 +58,7 @@ version: string           # Optional: Spec version (default: "1.0")
 description: string       # Optional: Human-readable description
 metadata: object          # Optional: Custom key-value pairs
 execution: ExecutionConfig  # Optional: Default execution settings
-tests: Test[]              # Required: Array of tests
+tests: (Test | string)[]   # Required: Array of tests or file references
 ```
 
 ## ExecutionConfig

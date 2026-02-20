@@ -162,10 +162,37 @@ See [Evaluators](/specification/evaluators/) for evaluator configuration.
 
 ### tests (required)
 
-Array of tests.
+Array of tests. Each element is either an inline test object or a string file path to import.
 
-- **Type:** `Test[]`
+- **Type:** `(Test | string)[]`
 - **Min items:** 1
+
+**Inline tests:**
+```yaml
+tests:
+  - id: greeting
+    criteria: Agent responds with a greeting
+    input: "Hello!"
+```
+
+**File references:**
+```yaml
+tests:
+  - ./security.yaml
+  - ./style.yaml
+```
+
+**Mixed (inline + file references):**
+```yaml
+tests:
+  - ./security.yaml
+  - ./style.yaml
+  - id: quick-check
+    criteria: Agent responds within constraints
+    input: "Hello!"
+```
+
+File references resolve relative to the EVAL.yaml directory. Each referenced file contains an array of test objects.
 
 See [Test Schema](/specification/case-schema/) for full schema.
 
@@ -208,8 +235,8 @@ For large evaluations, use JSONL format with one test per line:
 
 **dataset.jsonl:**
 ```jsonl
-{"id": "case-1", "criteria": "...", "input": [{"role": "user", "content": "..."}]}
-{"id": "case-2", "criteria": "...", "input": [{"role": "user", "content": "..."}]}
+{"id": "test-1", "criteria": "...", "input": [{"role": "user", "content": "..."}]}
+{"id": "test-2", "criteria": "...", "input": [{"role": "user", "content": "..."}]}
 ```
 
 **dataset.yaml** (sidecar for shared config):
@@ -236,10 +263,6 @@ npx ajv validate -s eval.schema.json -d EVAL.yaml
 
 ## Next Steps
 
-<<<<<<< HEAD
-- [Case Schema](/specification/evalcase-schema/) - Individual case structure
-=======
 - [Test Schema](/specification/case-schema/) - Individual test structure
->>>>>>> 205c288 (Rename cases to tests in EVAL schema for LLM training data alignment)
 - [Evaluators](/specification/evaluators/) - Evaluator configuration
 - [Organization](/specification/organization/) - File organization patterns
