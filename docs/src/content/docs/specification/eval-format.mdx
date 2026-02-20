@@ -164,7 +164,7 @@ See [Evaluators](/specification/evaluators/) for evaluator configuration.
 
 Array of tests. Each element is either an inline test object or a string file path to import.
 
-- **Type:** `(Test | string)[]`
+- **Type:** `(Test | string)[] | string`
 - **Min items:** 1
 
 **Inline tests:**
@@ -181,6 +181,13 @@ tests:
   - ./security.yaml
   - ./style.yaml
 ```
+
+**External file (inverted sidecar):**
+```yaml
+tests: ./cases.jsonl
+```
+
+When `tests` is a string path, it references an external YAML or JSONL file. The metadata and config stay in the main EVAL.yaml while test data lives separately.
 
 **Mixed (inline + file references):**
 ```yaml

@@ -12,16 +12,15 @@ A **test** is a single test within an evaluation suite. Each test defines an inp
 id: string                      # Unique identifier within file
 criteria: string                # Natural language success criteria
 
-# Input (at least one required)
+# Input (required)
 input: string | Message[]       # Input to the agent
-input_messages: Message[]       # Canonical form
 
 # Expected output (optional)
 expected_output: string | object | Message[]
-expected_messages: Message[]    # Canonical form
 
 # Evaluation (optional)
 rubrics: (string | Rubric)[]    # Inline evaluation criteria
+assert: Assertion[]             # Deterministic and LLM assertions
 execution: ExecutionConfig      # Per-test execution override
 
 # Metadata (optional)
@@ -60,22 +59,18 @@ criteria: |
   and provides an accurate fix with clear explanation.
 ```
 
-### input / input_messages
+### input
 
 The input to send to the agent.
 
 **Shorthand form (`input`):**
 ```yaml
 input: "Hello, my name is Alice!"
-# Expands to:
-input_messages:
-  - role: user
-    content: "Hello, my name is Alice!"
 ```
 
-**Full form (`input_messages`):**
+**Multi-turn:**
 ```yaml
-input_messages:
+input:
   - role: system
     content: "You are a helpful assistant."
   - role: user
@@ -84,7 +79,7 @@ input_messages:
 
 **With file references:**
 ```yaml
-input_messages:
+input:
   - role: user
     content:
       - type: text
@@ -132,7 +127,7 @@ tool_calls:
   value: object
 ```
 
-### expected_output / expected_messages
+### expected_output
 
 Reference output for comparison.
 
@@ -141,9 +136,9 @@ Reference output for comparison.
 expected_output: "Hello Alice! Nice to meet you."
 ```
 
-**Full form:**
+**Message array:**
 ```yaml
-expected_messages:
+expected_output:
   - role: assistant
     content: "Hello Alice! Nice to meet you."
 ```
@@ -287,7 +282,7 @@ Test-specific context provided to evaluators.
     Agent identifies SQL injection vulnerability and suggests
     parameterized queries as the fix.
 
-  input_messages:
+  input:
     - role: system
       content:
         - type: file
@@ -299,7 +294,7 @@ Test-specific context provided to evaluators.
         - type: file
           value: ./fixtures/vulnerable.py
 
-  expected_messages:
+  expected_output:
     - role: assistant
       content: |
         Security Issue: SQL Injection vulnerability detected.

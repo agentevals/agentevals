@@ -3,7 +3,7 @@ title: Evaluators Reference
 description: Overview of all evaluator types in AgentEvals
 ---
 
-Evaluators are components that assess agent outputs. AgentEvals supports seven core evaluator types that can be combined to create sophisticated evaluation pipelines.
+Evaluators are components that assess agent outputs. AgentEvals supports eleven core evaluator types that can be combined to create sophisticated evaluation pipelines.
 
 ## Evaluator Types
 
@@ -16,6 +16,10 @@ Evaluators are components that assess agent outputs. AgentEvals supports seven c
 | [`tool_trajectory`](/evaluators/tool-trajectory/) | Validate tool usage | Agentic behavior validation |
 | [`field_accuracy`](/evaluators/field-accuracy/) | Check data fields | Structured output validation |
 | [`execution_metrics`](/evaluators/execution-metrics/) | Performance bounds | Latency, cost, token limits |
+| `contains` | Substring check | Quick output validation |
+| `regex` | Pattern matching | Format validation |
+| `is_json` | JSON validation | API response checks |
+| `equals` | Exact match | Deterministic outputs |
 
 ## Common Configuration
 
@@ -147,6 +151,43 @@ Set performance thresholds.
   max_cost_usd: 0.10
 ```
 
+### contains
+
+Check if output contains a substring.
+
+```yaml
+- type: contains
+  value: "DENIED"
+  required: true
+```
+
+### regex
+
+Check if output matches a regular expression.
+
+```yaml
+- type: regex
+  value: "Good (morning|afternoon|evening)"
+```
+
+### is_json
+
+Check if output is valid JSON.
+
+```yaml
+- type: is_json
+  required: true
+```
+
+### equals
+
+Check if output exactly matches a value (both sides trimmed).
+
+```yaml
+- type: equals
+  value: "42"
+```
+
 ## Weights and Aggregation
 
 Evaluator scores are combined using weighted averaging:
@@ -171,15 +212,25 @@ If `correctness` scores 0.9 and `format` scores 0.7:
 Final Score = (0.9 × 3.0 + 0.7 × 1.0) / (3.0 + 1.0) = 0.85
 ```
 
-## Required Evaluators
+## Required Gates
 
-Rubrics with `required: true` override the weighted score:
+Any evaluator can be marked `required`. When a required evaluator scores below the threshold, the verdict is forced to `fail` regardless of the aggregate score.
+
+| Value | Behavior |
+|-------|----------|
+| `required: true` | Must score >= 0.8 (default threshold) |
+| `required: 0.6` | Must score >= custom threshold (0-1) |
 
 ```yaml
-rubrics:
-  - id: safety
-    outcome: No harmful content
-    required: true    # Fail verdict if missed, regardless of score
+assert:
+  - type: contains
+    value: "DENIED"
+    required: true          # Must pass (>= 0.8)
+  - type: rubrics
+    required: 0.6           # Must score at least 0.6
+    criteria:
+      - id: quality
+        outcome: Response is well-structured
 ```
 
 ## Next Steps
