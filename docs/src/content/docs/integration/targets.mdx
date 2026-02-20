@@ -123,13 +123,13 @@ execution:
   target: default  # Uses "default" from targets.yaml
 ```
 
-### Per-Case Override
+### Per-Test Override
 
 ```yaml
-cases:
+tests:
   - id: complex-task
     execution:
-      target: powerful  # Override for this case
+      target: powerful  # Override for this test
 ```
 
 ### Judge Target
@@ -166,19 +166,19 @@ AZURE_DEPLOYMENT=gpt-4o
 
 ## Target Resolution
 
-1. Check case `execution.target`
+1. Check test `execution.target`
 2. Fall back to file-level `execution.target`
 3. Fall back to `default` target
 4. Error if no matching target found
 
 ```yaml
 # Resolution order
-cases:
-  - id: case-1
+tests:
+  - id: test-1
     execution:
       target: special    # 1. Uses "special"
 
-  - id: case-2           # 2. Uses file-level "fast"
+  - id: test-2           # 2. Uses file-level "fast"
 
 execution:
   target: fast           # File-level default

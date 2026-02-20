@@ -119,7 +119,7 @@ execution:
           outcome: Identifies security implications
           weight: 2.0
 
-cases:
+tests:
   - id: sql-injection
     criteria: Identifies SQL injection vulnerability
     input:
@@ -230,10 +230,10 @@ Intermediate values are interpolated linearly.
 
 ## Inline vs. File-Level Rubrics
 
-### Inline (per case)
+### Inline (per test)
 
 ```yaml
-cases:
+tests:
   - id: greeting
     criteria: Friendly greeting
     input: "Hello!"
@@ -255,8 +255,8 @@ execution:
         - id: accuracy
           outcome: Accurate information
 
-cases:
-  - id: case-1
+tests:
+  - id: test-1
     # Uses shared_rubric evaluator
 ```
 
@@ -271,10 +271,10 @@ execution:
         - id: tone
           outcome: Professional
 
-cases:
-  - id: specific-case
+tests:
+  - id: specific-test
     rubrics:
-      # Additional case-specific rubrics
+      # Additional test-specific rubrics
       - Must mention product name
       - Includes call to action
 ```

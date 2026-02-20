@@ -93,7 +93,7 @@ execution:
       type: execution_metrics
       max_tool_calls: 10
 
-cases:
+tests:
   - id: off-by-one
     criteria: Identifies loop condition bug
     input:
@@ -253,7 +253,7 @@ evaluators:
 ### Integration Evals
 
 ```yaml
-cases:
+tests:
   - id: multi-step
     conversation_id: research-flow
 

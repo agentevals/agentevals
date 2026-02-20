@@ -36,7 +36,7 @@ name: my-agent-eval
 version: "1.0"
 description: Evaluates my agent capabilities
 
-cases:
+tests:
   - id: basic-task
     criteria: Agent completes the task correctly
     input:
@@ -44,9 +44,9 @@ cases:
         content: "Perform this task..."
 ```
 
-### Cases
+### Tests
 
-Individual test cases within an evaluation suite. Each case defines:
+Individual tests within an evaluation suite. Each test defines:
 
 - **Input** - What to send to the agent
 - **Criteria** - Natural language description of success
