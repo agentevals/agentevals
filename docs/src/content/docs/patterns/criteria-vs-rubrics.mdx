@@ -1,0 +1,85 @@
+---
+title: Criteria vs Rubrics
+description: When to use criteria, rubrics, or both
+---
+
+The `criteria` and `rubrics` fields serve distinct but complementary roles in defining what makes a successful evaluation.
+
+## Quick Reference
+
+| Scenario | `criteria` | `rubrics` | Result |
+|----------|-----------|-----------|--------|
+| Simple check | Required | — | criteria is the sole evaluation signal |
+| Structured scoring | Optional | Required | rubrics drive scoring; criteria adds context |
+| Code judge only | — | — | `evaluators` sufficient |
+
+## criteria
+
+High-level description of what a correct response should contain.
+
+```yaml
+tests:
+  - id: math-check
+    criteria: Correctly calculates 15 + 27 = 42
+    input: What is 15 + 27?
+```
+
+When no rubrics are defined, `criteria` acts as the sole evaluation criterion. Implementations may auto-promote it to a single rubric item.
+
+When rubrics ARE defined, `criteria` serves as a high-level seed — context for LLM judges and tooling that generates rubrics from natural language.
+
+## rubrics
+
+Structured evaluation criteria with optional weights and score ranges.
+
+**String shorthand** — same ergonomics as criteria, but multiple items:
+```yaml
+rubrics:
+  - Mentions divide-and-conquer approach
+  - Explains the partition step
+  - States time complexity correctly
+```
+
+**Object form** — weighted, with specific outcomes:
+```yaml
+rubrics:
+  - id: accuracy
+    outcome: Correctly calculates the sum
+    weight: 2.0
+  - id: explanation
+    outcome: Shows working steps
+    weight: 1.0
+```
+
+**Score ranges** — analytic scoring:
+```yaml
+rubrics:
+  - id: factual_accuracy
+    weight: 2.0
+    score_ranges:
+      0: Contains major factual errors
+      8: Accurate, covers key points
+      10: Fully accurate, no distortions
+```
+
+## When Both Are Present
+
+```yaml
+tests:
+  - id: quicksort-explain
+    criteria: Provide a clear explanation of how quicksort works
+    input: Explain quicksort
+    rubrics:
+      - Mentions divide-and-conquer approach
+      - Explains partition step
+      - States time complexity
+```
+
+Here, `criteria` provides high-level context while `rubrics` define the specific checkpoints. The rubrics drive scoring — criteria supplements but does not replace them.
+
+## Validation
+
+At least one of these must be present:
+- `criteria`
+- `rubrics`
+- `evaluators` (for code judges or custom evaluators)
