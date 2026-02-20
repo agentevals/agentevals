@@ -36,3 +36,6 @@ pnpm-lock.yaml
 
 # AgentV results (local)
 .agentv/results/
+
+# Worktrees
+.worktrees/
