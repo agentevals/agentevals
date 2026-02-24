@@ -44,23 +44,22 @@ name: hello-world-eval
 version: "1.0"
 description: A simple evaluation to verify agent responses
 
-execution:
-  evaluators:
-    - name: greeting_quality
-      type: llm_judge
-      prompt: |
-        Evaluate if the response is a proper greeting.
+assert:
+  - name: greeting_quality
+    type: llm_judge
+    prompt: |
+      Evaluate if the response is a proper greeting.
 
-        Input: {{input}}
-        Response: {{answer}}
+      Input: {{input}}
+      Response: {{answer}}
 
-        Score 1.0 if the response:
-        - Contains a greeting
-        - Mentions the user's name
-        - Is friendly and appropriate
+      Score 1.0 if the response:
+      - Contains a greeting
+      - Mentions the user's name
+      - Is friendly and appropriate
 
-        Score 0.5 if partially correct.
-        Score 0.0 if fails basic requirements.
+      Score 0.5 if partially correct.
+      Score 0.0 if fails basic requirements.
 
 tests:
   - id: greeting-response
@@ -81,15 +80,14 @@ tests:
 For deterministic checks, add a code judge:
 
 ```yaml
-execution:
-  evaluators:
-    - name: name_check
-      type: code_judge
-      script: ["python", "./judges/check_name.py"]
+assert:
+  - name: name_check
+    type: code_judge
+    script: ["python", "./judges/check_name.py"]
 
-    - name: greeting_quality
-      type: llm_judge
-      prompt: ./prompts/greeting.md
+  - name: greeting_quality
+    type: llm_judge
+    prompt: ./prompts/greeting.md
 ```
 
 Create `judges/check_name.py`:

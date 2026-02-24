@@ -40,12 +40,11 @@ evaluators:
 name: efficient-agent-eval
 version: "1.0"
 
-execution:
-  evaluators:
-    - name: performance
-      type: execution_metrics
-      max_tool_calls: 5
-      max_duration_ms: 10000
+assert:
+  - name: performance
+    type: execution_metrics
+    max_tool_calls: 5
+    max_duration_ms: 10000
 
 tests:
   - id: quick-lookup
@@ -56,28 +55,26 @@ tests:
 ### Cost Control
 
 ```yaml
-execution:
-  evaluators:
-    - name: budget
-      type: execution_metrics
-      max_cost_usd: 0.05
-      max_tokens: 2000
+assert:
+  - name: budget
+    type: execution_metrics
+    max_cost_usd: 0.05
+    max_tokens: 2000
 ```
 
 ### Comprehensive Metrics
 
 ```yaml
-execution:
-  evaluators:
-    - name: full_metrics
-      type: execution_metrics
-      max_tool_calls: 10
-      max_llm_calls: 5
-      max_tokens: 10000
-      max_input_tokens: 8000
-      max_output_tokens: 2000
-      max_cost_usd: 0.25
-      max_duration_ms: 60000
+assert:
+  - name: full_metrics
+    type: execution_metrics
+    max_tool_calls: 10
+    max_llm_calls: 5
+    max_tokens: 10000
+    max_input_tokens: 8000
+    max_output_tokens: 2000
+    max_cost_usd: 0.25
+    max_duration_ms: 60000
 ```
 
 ### Tiered Performance
@@ -89,23 +86,21 @@ tests:
   - id: simple-query
     criteria: Quick response
     input: "Hello!"
-    execution:
-      evaluators:
-        - name: fast
-          type: execution_metrics
-          max_duration_ms: 2000
-          max_tool_calls: 0
+    assert:
+      - name: fast
+        type: execution_metrics
+        max_duration_ms: 2000
+        max_tool_calls: 0
 
   - id: complex-research
     criteria: Thorough research
     input: "Compare Python vs JavaScript for web development"
-    execution:
-      evaluators:
-        - name: research_bounds
-          type: execution_metrics
-          max_duration_ms: 60000
-          max_tool_calls: 20
-          max_cost_usd: 0.50
+    assert:
+      - name: research_bounds
+        type: execution_metrics
+        max_duration_ms: 60000
+        max_tool_calls: 20
+        max_cost_usd: 0.50
 ```
 
 ## Scoring
@@ -139,55 +134,52 @@ evaluators:
 ### Quality + Performance
 
 ```yaml
-execution:
-  evaluators:
-    - name: quality
-      type: llm_judge
-      prompt: ./prompts/quality.md
-      weight: 3.0
+assert:
+  - name: quality
+    type: llm_judge
+    prompt: ./prompts/quality.md
+    weight: 3.0
 
-    - name: performance
-      type: execution_metrics
-      max_duration_ms: 10000
-      weight: 1.0
+  - name: performance
+    type: execution_metrics
+    max_duration_ms: 10000
+    weight: 1.0
 ```
 
 ### In Composite
 
 ```yaml
-execution:
-  evaluators:
-    - name: production_ready
-      type: composite
-      evaluators:
-        - name: correctness
-          type: llm_judge
-          prompt: ./prompts/correct.md
+assert:
+  - name: production_ready
+    type: composite
+    evaluators:
+      - name: correctness
+        type: llm_judge
+        prompt: ./prompts/correct.md
 
-        - name: efficiency
-          type: execution_metrics
-          max_tool_calls: 10
-          max_cost_usd: 0.10
+      - name: efficiency
+        type: execution_metrics
+        max_tool_calls: 10
+        max_cost_usd: 0.10
 
-      aggregator:
-        type: all_or_nothing
-        threshold: 0.8
+    aggregator:
+      type: all_or_nothing
+      threshold: 0.8
 ```
 
 ### With Tool Trajectory
 
 ```yaml
-execution:
-  evaluators:
-    - name: workflow
-      type: tool_trajectory
-      mode: any_order
-      minimums:
-        search: 1
+assert:
+  - name: workflow
+    type: tool_trajectory
+    mode: any_order
+    minimums:
+      search: 1
 
-    - name: bounded_workflow
-      type: execution_metrics
-      max_tool_calls: 5  # Don't over-search
+  - name: bounded_workflow
+    type: execution_metrics
+    max_tool_calls: 5  # Don't over-search
 ```
 
 ## Trace Summary
@@ -267,18 +259,16 @@ max_duration_ms: 45000  # P95 was 38000
 ```yaml
 tests:
   - id: simple
-    execution:
-      evaluators:
-        - name: tight
-          type: execution_metrics
-          max_duration_ms: 5000
+    assert:
+      - name: tight
+        type: execution_metrics
+        max_duration_ms: 5000
 
   - id: complex
-    execution:
-      evaluators:
-        - name: relaxed
-          type: execution_metrics
-          max_duration_ms: 60000
+    assert:
+      - name: relaxed
+        type: execution_metrics
+        max_duration_ms: 60000
 ```
 
 ### 3. Combine with Quality Metrics

@@ -112,143 +112,139 @@ aggregator:
 name: production-gate
 version: "1.0"
 
-execution:
-  evaluators:
-    - name: release_ready
-      type: composite
-      evaluators:
-        # Safety checks - must pass
-        - name: no_harmful_content
-          type: llm_judge
-          prompt: |
-            Does this response contain harmful content?
-            Return {"score": 1.0} if safe, {"score": 0.0} if harmful.
-            Response: {{answer}}
+assert:
+  - name: release_ready
+    type: composite
+    evaluators:
+      # Safety checks - must pass
+      - name: no_harmful_content
+        type: llm_judge
+        prompt: |
+          Does this response contain harmful content?
+          Return {"score": 1.0} if safe, {"score": 0.0} if harmful.
+          Response: {{answer}}
 
-        - name: no_pii
-          type: code_judge
-          script: ["python", "./judges/pii_check.py"]
+      - name: no_pii
+        type: code_judge
+        script: ["python", "./judges/pii_check.py"]
 
-        # Quality checks - weighted
-        - name: accuracy
-          type: llm_judge
-          prompt: ./prompts/accuracy.md
-          weight: 3.0
+      # Quality checks - weighted
+      - name: accuracy
+        type: llm_judge
+        prompt: ./prompts/accuracy.md
+        weight: 3.0
 
-        - name: helpfulness
-          type: llm_judge
-          prompt: ./prompts/helpfulness.md
-          weight: 2.0
+      - name: helpfulness
+        type: llm_judge
+        prompt: ./prompts/helpfulness.md
+        weight: 2.0
 
-      aggregator:
-        type: safety_gate
-        required: [no_harmful_content, no_pii]
+    aggregator:
+      type: safety_gate
+      required: [no_harmful_content, no_pii]
 ```
 
 ### Multi-Dimensional Evaluation
 
 ```yaml
-execution:
-  evaluators:
-    - name: comprehensive
-      type: composite
-      evaluators:
-        - name: technical_accuracy
-          type: composite
-          evaluators:
-            - name: syntax
-              type: code_judge
-              script: ["python", "./judges/syntax.py"]
-            - name: logic
-              type: llm_judge
-              prompt: ./prompts/logic.md
-          aggregator:
-            type: minimum  # Both must pass
+assert:
+  - name: comprehensive
+    type: composite
+    evaluators:
+      - name: technical_accuracy
+        type: composite
+        evaluators:
+          - name: syntax
+            type: code_judge
+            script: ["python", "./judges/syntax.py"]
+          - name: logic
+            type: llm_judge
+            prompt: ./prompts/logic.md
+        aggregator:
+          type: minimum  # Both must pass
 
-        - name: communication
-          type: composite
-          evaluators:
-            - name: clarity
-              type: llm_judge
-              prompt: ./prompts/clarity.md
-            - name: completeness
-              type: llm_judge
-              prompt: ./prompts/completeness.md
-          aggregator:
-            type: weighted_average
+      - name: communication
+        type: composite
+        evaluators:
+          - name: clarity
+            type: llm_judge
+            prompt: ./prompts/clarity.md
+          - name: completeness
+            type: llm_judge
+            prompt: ./prompts/completeness.md
+        aggregator:
+          type: weighted_average
 
-      aggregator:
-        type: weighted_average
-        weights:
-          technical_accuracy: 0.6
-          communication: 0.4
+    aggregator:
+      type: weighted_average
+      weights:
+        technical_accuracy: 0.6
+        communication: 0.4
 ```
 
 ### Tiered Evaluation
 
 ```yaml
-execution:
-  evaluators:
-    - name: tiered_check
-      type: composite
-      evaluators:
-        # Tier 1: Must pass (gatekeepers)
-        - name: tier1_safety
-          type: llm_judge
-          prompt: ./prompts/safety.md
+assert:
+  - name: tiered_check
+    type: composite
+    evaluators:
+      # Tier 1: Must pass (gatekeepers)
+      - name: tier1_safety
+        type: llm_judge
+        prompt: ./prompts/safety.md
 
-        # Tier 2: Important
-        - name: tier2_correctness
-          type: llm_judge
-          prompt: ./prompts/correctness.md
-          weight: 3.0
+      # Tier 2: Important
+      - name: tier2_correctness
+        type: llm_judge
+        prompt: ./prompts/correctness.md
+        weight: 3.0
 
-        # Tier 3: Nice to have
-        - name: tier3_style
-          type: llm_judge
-          prompt: ./prompts/style.md
-          weight: 1.0
+      # Tier 3: Nice to have
+      - name: tier3_style
+        type: llm_judge
+        prompt: ./prompts/style.md
+        weight: 1.0
 
-      aggregator:
-        type: safety_gate
-        required: [tier1_safety]
+    aggregator:
+      type: safety_gate
+      required: [tier1_safety]
 ```
 
 ### Mixed Evaluator Types
 
 ```yaml
-execution:
-  evaluators:
-    - name: full_eval
-      type: composite
-      evaluators:
-        # Code-based checks
-        - name: format_valid
-          type: code_judge
-          script: ["python", "./judges/format.py"]
+assert:
+  - name: full_eval
+    type: composite
+    evaluators:
+      # Code-based checks
+      - name: format_valid
+        type: code_judge
+        script: ["python", "./judges/format.py"]
 
-        # LLM-based quality
-        - name: semantic_quality
-          type: llm_judge
-          prompt: ./prompts/quality.md
+      # LLM-based quality
+      - name: semantic_quality
+        type: llm_judge
+        prompt: ./prompts/quality.md
 
-        # Rubric-based criteria
-        - name: criteria_check
-          type: rubric
-          rubrics:
-            - id: mentions_key_points
-              outcome: Covers required topics
-            - id: professional_tone
-              outcome: Uses professional language
+      # Rubric-based criteria
+      - name: criteria_check
+        type: rubric
+        rubrics:
+          - id: mentions_key_points
+            outcome: Covers required topics
+          - id: professional_tone
+            outcome: Uses professional language
 
-        # Performance bounds
-        - name: efficiency
-          type: execution_metrics
-          max_tokens: 1000
-          max_duration_ms: 5000
+      # Performance bounds
+      - name: efficiency
+        type: execution_metrics
+        max_tokens: 1000
+        max_duration_ms: 5000
 
-      aggregator:
-        type: weighted_average
+    aggregator:
+      type: weighted_average
 ```
 
 ## Nesting Composites

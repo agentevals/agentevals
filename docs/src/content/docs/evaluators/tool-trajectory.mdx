@@ -174,30 +174,29 @@ name: research-workflow-eval
 version: "1.0"
 description: Evaluates research agent workflow
 
-execution:
-  evaluators:
-    # Check workflow follows expected pattern
-    - name: workflow_pattern
-      type: tool_trajectory
-      mode: in_order
-      expected:
-        - tool: search
-        - tool: read_document
-        - tool: synthesize
+assert:
+  # Check workflow follows expected pattern
+  - name: workflow_pattern
+    type: tool_trajectory
+    mode: in_order
+    expected:
+      - tool: search
+      - tool: read_document
+      - tool: synthesize
 
-    # Ensure thorough research
-    - name: research_depth
-      type: tool_trajectory
-      mode: any_order
-      minimums:
-        search: 1
-        read_document: 2
+  # Ensure thorough research
+  - name: research_depth
+    type: tool_trajectory
+    mode: any_order
+    minimums:
+      search: 1
+      read_document: 2
 
-    # Check efficiency
-    - name: efficiency
-      type: execution_metrics
-      max_tool_calls: 10
-      max_duration_ms: 30000
+  # Check efficiency
+  - name: efficiency
+    type: execution_metrics
+    max_tool_calls: 10
+    max_duration_ms: 30000
 
 tests:
   - id: research-python
@@ -236,48 +235,46 @@ Tool trajectory evaluators have access to trace data:
 ### With LLM Judge
 
 ```yaml
-execution:
-  evaluators:
-    - name: tool_usage
-      type: tool_trajectory
-      mode: in_order
-      expected:
-        - tool: search
-        - tool: analyze
+assert:
+  - name: tool_usage
+    type: tool_trajectory
+    mode: in_order
+    expected:
+      - tool: search
+      - tool: analyze
 
-    - name: output_quality
-      type: llm_judge
-      prompt: |
-        Evaluate the quality of the research output.
-        Did the agent use search and analysis effectively?
+  - name: output_quality
+    type: llm_judge
+    prompt: |
+      Evaluate the quality of the research output.
+      Did the agent use search and analysis effectively?
 
-        Output: {{answer}}
-        Tools used: {{output_messages}}
+      Output: {{answer}}
+      Tools used: {{output_messages}}
 ```
 
 ### In Composite
 
 ```yaml
-execution:
-  evaluators:
-    - name: agent_eval
-      type: composite
-      evaluators:
-        - name: correct_tools
-          type: tool_trajectory
-          mode: any_order
-          minimums:
-            search: 1
+assert:
+  - name: agent_eval
+    type: composite
+    evaluators:
+      - name: correct_tools
+        type: tool_trajectory
+        mode: any_order
+        minimums:
+          search: 1
 
-        - name: correct_output
-          type: llm_judge
-          prompt: ./prompts/quality.md
+      - name: correct_output
+        type: llm_judge
+        prompt: ./prompts/quality.md
 
-      aggregator:
-        type: weighted_average
-        weights:
-          correct_tools: 0.4
-          correct_output: 0.6
+    aggregator:
+      type: weighted_average
+      weights:
+        correct_tools: 0.4
+        correct_output: 0.6
 ```
 
 ## Scoring

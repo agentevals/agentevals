@@ -66,11 +66,10 @@ tests:
 name: context-retention
 version: "1.0"
 
-execution:
-  evaluators:
-    - name: retention
-      type: llm_judge
-      prompt: |
+assert:
+  - name: retention
+    type: llm_judge
+    prompt: |
         Evaluate if the agent maintains context across the conversation.
 
         Conversation: {{input_messages}}
@@ -108,11 +107,10 @@ tests:
 ### Topic Coherence
 
 ```yaml
-execution:
-  evaluators:
-    - name: coherence
-      type: llm_judge
-      prompt: |
+assert:
+  - name: coherence
+    type: llm_judge
+    prompt: |
         Does the response stay on topic with the conversation?
 
         Conversation: {{input_messages}}
@@ -127,11 +125,10 @@ execution:
 ### Resolution Tracking
 
 ```yaml
-execution:
-  evaluators:
-    - name: resolution
-      type: llm_judge
-      prompt: |
+assert:
+  - name: resolution
+    type: llm_judge
+    prompt: |
         Has the agent resolved the user's issue?
 
         Original request: (first user message)
@@ -156,28 +153,27 @@ description: Evaluates multi-turn customer support conversations
 metadata:
   tags: [multi-turn, support, conversation]
 
-execution:
-  evaluators:
-    - name: conversation_quality
-      type: composite
-      evaluators:
-        - name: context_retention
-          type: llm_judge
-          prompt: ./prompts/context.md
-          weight: 3.0
+assert:
+  - name: conversation_quality
+    type: composite
+    evaluators:
+      - name: context_retention
+        type: llm_judge
+        prompt: ./prompts/context.md
+        weight: 3.0
 
-        - name: resolution
-          type: llm_judge
-          prompt: ./prompts/resolution.md
-          weight: 2.0
+      - name: resolution
+        type: llm_judge
+        prompt: ./prompts/resolution.md
+        weight: 2.0
 
-        - name: tone
-          type: llm_judge
-          prompt: ./prompts/tone.md
-          weight: 1.0
+      - name: tone
+        type: llm_judge
+        prompt: ./prompts/tone.md
+        weight: 1.0
 
-      aggregator:
-        type: weighted_average
+    aggregator:
+      type: weighted_average
 
 tests:
   # Complete conversation flow
@@ -243,26 +239,24 @@ tests:
 ```yaml
 tests:
   - id: turn-3
-    execution:
-      evaluators:
-        # Evaluate just this turn
-        - name: turn_relevance
-          type: llm_judge
-          prompt: |
-            Is this response relevant to the previous message?
-            Previous: (last assistant + user message)
-            Response: {{answer}}
+    assert:
+      # Evaluate just this turn
+      - name: turn_relevance
+        type: llm_judge
+        prompt: |
+          Is this response relevant to the previous message?
+          Previous: (last assistant + user message)
+          Response: {{answer}}
 ```
 
 ### Conversation-Level Metrics
 
 ```yaml
-execution:
-  evaluators:
-    # Evaluate entire conversation
-    - name: overall_flow
-      type: llm_judge
-      prompt: |
+assert:
+  # Evaluate entire conversation
+  - name: overall_flow
+    type: llm_judge
+    prompt: |
         Evaluate the overall conversation quality.
 
         Full conversation: {{input_messages}}
@@ -279,15 +273,14 @@ execution:
 ### Track Tools Across Turns
 
 ```yaml
-execution:
-  evaluators:
-    - name: tool_progression
-      type: tool_trajectory
-      mode: in_order
-      expected:
-        - tool: lookup_account
-        - tool: verify_identity
-        - tool: perform_action
+assert:
+  - name: tool_progression
+    type: tool_trajectory
+    mode: in_order
+    expected:
+      - tool: lookup_account
+      - tool: verify_identity
+      - tool: perform_action
 
 tests:
   - id: account-lookup-flow
@@ -354,17 +347,16 @@ tests:
 ### 4. Evaluate Both Turns and Overall
 
 ```yaml
-execution:
-  evaluators:
-    # Per-turn quality
-    - name: turn_quality
-      type: llm_judge
-      prompt: ./prompts/turn.md
+assert:
+  # Per-turn quality
+  - name: turn_quality
+    type: llm_judge
+    prompt: ./prompts/turn.md
 
-    # Overall conversation
-    - name: conversation_quality
-      type: llm_judge
-      prompt: ./prompts/conversation.md
+  # Overall conversation
+  - name: conversation_quality
+    type: llm_judge
+    prompt: ./prompts/conversation.md
 ```
 
 ### 5. Use Realistic Scenarios

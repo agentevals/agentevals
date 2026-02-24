@@ -129,11 +129,10 @@ print(json.dumps({
 
 **EVAL.yaml:**
 ```yaml
-execution:
-  evaluators:
-    - name: syntax
-      type: code_judge
-      script: ["python", "./judges/syntax_check.py"]
+assert:
+  - name: syntax
+    type: code_judge
+    script: ["python", "./judges/syntax_check.py"]
 ```
 
 ### TypeScript Code Judge
@@ -174,13 +173,12 @@ export default defineCodeJudge(({ candidateAnswer, config }) => {
 
 **EVAL.yaml:**
 ```yaml
-execution:
-  evaluators:
-    - name: format
-      type: code_judge
-      script: ["npx", "tsx", "./judges/format_check.ts"]
-      config:
-        requiredFields: ["id", "name", "status"]
+assert:
+  - name: format
+    type: code_judge
+    script: ["npx", "tsx", "./judges/format_check.ts"]
+    config:
+      requiredFields: ["id", "name", "status"]
 ```
 
 ### Shell Script Judge

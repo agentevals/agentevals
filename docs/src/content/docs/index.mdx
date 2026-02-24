@@ -39,11 +39,10 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 name: code-review
 version: "1.0"
 
-execution:
-  evaluators:
-    - name: quality
-      type: llm_judge
-      prompt: ./prompts/quality.md
+assert:
+  - name: quality
+    type: llm_judge
+    prompt: ./prompts/quality.md
 
 tests:
   - id: detect-bug
