@@ -74,7 +74,7 @@ execution:
         Evaluate if the agent maintains context across the conversation.
 
         Conversation: {{input_messages}}
-        Final Response: {{candidate_answer}}
+        Final Response: {{answer}}
 
         Check:
         1. References earlier context correctly
@@ -116,7 +116,7 @@ execution:
         Does the response stay on topic with the conversation?
 
         Conversation: {{input_messages}}
-        Response: {{candidate_answer}}
+        Response: {{answer}}
 
         Score:
         - 1.0: Fully on topic
@@ -136,7 +136,7 @@ execution:
 
         Original request: (first user message)
         Conversation: {{input_messages}}
-        Final response: {{candidate_answer}}
+        Final response: {{answer}}
 
         Check:
         1. Issue identified
@@ -251,7 +251,7 @@ tests:
           prompt: |
             Is this response relevant to the previous message?
             Previous: (last assistant + user message)
-            Response: {{candidate_answer}}
+            Response: {{answer}}
 ```
 
 ### Conversation-Level Metrics
@@ -266,7 +266,7 @@ execution:
         Evaluate the overall conversation quality.
 
         Full conversation: {{input_messages}}
-        Final state: {{candidate_answer}}
+        Final state: {{answer}}
 
         Consider:
         - Natural flow
