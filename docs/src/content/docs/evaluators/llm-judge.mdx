@@ -199,12 +199,11 @@ Return JSON with score (0.0-1.0) based on similarity to reference.
 name: qa-evaluation
 version: "1.0"
 
-execution:
-  evaluators:
-    - name: answer_quality
-      type: llm_judge
-      prompt: ./prompts/quality.md
-      weight: 1.0
+assert:
+  - name: answer_quality
+    type: llm_judge
+    prompt: ./prompts/quality.md
+    weight: 1.0
 
 tests:
   - id: factual-question
@@ -215,22 +214,21 @@ tests:
 ### Multiple LLM Judges
 
 ```yaml
-execution:
-  evaluators:
-    - name: accuracy
-      type: llm_judge
-      prompt: ./prompts/accuracy.md
-      weight: 3.0
+assert:
+  - name: accuracy
+    type: llm_judge
+    prompt: ./prompts/accuracy.md
+    weight: 3.0
 
-    - name: clarity
-      type: llm_judge
-      prompt: ./prompts/clarity.md
-      weight: 1.0
+  - name: clarity
+    type: llm_judge
+    prompt: ./prompts/clarity.md
+    weight: 1.0
 
-    - name: helpfulness
-      type: llm_judge
-      prompt: ./prompts/helpfulness.md
-      weight: 2.0
+  - name: helpfulness
+    type: llm_judge
+    prompt: ./prompts/helpfulness.md
+    weight: 2.0
 ```
 
 ### With Different Judge Model
@@ -238,11 +236,12 @@ execution:
 ```yaml
 execution:
   target: fast_model  # Main agent model
-  evaluators:
-    - name: quality
-      type: llm_judge
-      prompt: ./prompts/quality.md
-      target: powerful_judge  # Use more capable model for judging
+
+assert:
+  - name: quality
+    type: llm_judge
+    prompt: ./prompts/quality.md
+    target: powerful_judge  # Use more capable model for judging
 ```
 
 ## Best Practices

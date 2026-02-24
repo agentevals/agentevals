@@ -62,11 +62,10 @@ project/
 Reference with absolute paths from the repo root:
 
 ```yaml
-execution:
-  evaluators:
-    - name: safety
-      type: llm_judge
-      prompt: /shared/prompts/safety.md
+assert:
+  - name: safety
+    type: llm_judge
+    prompt: /shared/prompts/safety.md
 ```
 
 ## Configuration

@@ -43,26 +43,24 @@ AgentEvals is built on **agent-native architecture** principles. These principle
 **Example:**
 ```yaml
 # Good: Atomic evaluators
-execution:
-  evaluators:
-    - name: syntax
-      type: code_judge
-      script: ["python", "./judges/syntax.py"]
+assert:
+  - name: syntax
+    type: code_judge
+    script: ["python", "./judges/syntax.py"]
 
-    - name: correctness
-      type: llm_judge
-      prompt: ./prompts/correctness.md
+  - name: correctness
+    type: llm_judge
+    prompt: ./prompts/correctness.md
 
-    - name: efficiency
-      type: execution_metrics
-      max_tool_calls: 10
+  - name: efficiency
+    type: execution_metrics
+    max_tool_calls: 10
 
 # Avoid: Monolithic evaluator
-execution:
-  evaluators:
-    - name: everything
-      type: code_judge
-      script: ["python", "./judges/check_all.py"]  # 500 lines
+assert:
+  - name: everything
+    type: code_judge
+    script: ["python", "./judges/check_all.py"]  # 500 lines
 ```
 
 ### 3. Composability
@@ -76,21 +74,20 @@ execution:
 
 **Example:**
 ```yaml
-execution:
-  evaluators:
-    # Composite: Combines safety and quality
-    - name: release_gate
-      type: composite
-      evaluators:
-        - name: safety
-          type: llm_judge
-          prompt: ./prompts/safety.md
-        - name: quality
-          type: llm_judge
-          prompt: ./prompts/quality.md
-      aggregator:
-        type: safety_gate
-        required: [safety]
+assert:
+  # Composite: Combines safety and quality
+  - name: release_gate
+    type: composite
+    evaluators:
+      - name: safety
+        type: llm_judge
+        prompt: ./prompts/safety.md
+      - name: quality
+        type: llm_judge
+        prompt: ./prompts/quality.md
+    aggregator:
+      type: safety_gate
+      required: [safety]
 ```
 
 ### 4. Emergent Capability
@@ -110,14 +107,13 @@ execution:
     May accomplish this in any order or combine steps.
 
   # Use tool_trajectory with any_order mode
-  execution:
-    evaluators:
-      - name: workflow
-        type: tool_trajectory
-        mode: any_order
-        minimums:
-          summarize: 1
-          translate: 1
+  assert:
+    - name: workflow
+      type: tool_trajectory
+      mode: any_order
+      minimums:
+        summarize: 1
+        translate: 1
 ```
 
 ### 5. Improvement Over Time
@@ -211,15 +207,14 @@ For agentic tasks, evaluate tool usage, not just final output.
 
 ```yaml
 # Good: Evaluates the journey, not just destination
-execution:
-  evaluators:
-    - name: tool_usage
-      type: tool_trajectory
-      mode: in_order
-      expected:
-        - tool: search
-        - tool: analyze
-        - tool: respond
+assert:
+  - name: tool_usage
+    type: tool_trajectory
+    mode: in_order
+    expected:
+      - tool: search
+      - tool: analyze
+      - tool: respond
 ```
 
 ## Next Steps

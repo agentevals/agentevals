@@ -205,10 +205,10 @@ tests:
     execution:
       timeout_seconds: 600    # Override default timeout
       target: powerful_model  # Use different target
-      evaluators:
-        - name: custom_check
-          type: code_judge
-          script: ["python", "./judges/analysis.py"]
+    assert:
+      - name: custom_check
+        type: code_judge
+        script: ["python", "./judges/analysis.py"]
 ```
 
 ### conversation_id
@@ -314,11 +314,10 @@ Test-specific context provided to evaluators.
       outcome: Explains potential impact
       weight: 1.0
 
-  execution:
-    evaluators:
-      - name: vuln_check
-        type: code_judge
-        script: ["python", "./judges/security_check.py"]
+  assert:
+    - name: vuln_check
+      type: code_judge
+      script: ["python", "./judges/security_check.py"]
 ```
 
 ## Next Steps

@@ -37,16 +37,17 @@ metadata:
 execution:
   target: default
   timeout_seconds: 300
-  evaluators:
-    - name: correctness
-      type: llm_judge
-      prompt: ./prompts/correctness.md
-      weight: 2.0
 
-    - name: format_check
-      type: code_judge
-      script: ["python", "./judges/format.py"]
-      weight: 1.0
+assert:
+  - name: correctness
+    type: llm_judge
+    prompt: ./prompts/correctness.md
+    weight: 2.0
+
+  - name: format_check
+    type: code_judge
+    script: ["python", "./judges/format.py"]
+    weight: 1.0
 
 tests:
   - id: detect-off-by-one
@@ -76,11 +77,10 @@ tests:
       - Identifies the loop never executes
       - Provides correct fix
       - Explains the issue clearly
-    execution:
-      evaluators:
-        - name: bug_check
-          type: code_judge
-          script: ["python", "./judges/bug_check.py"]
+    assert:
+      - name: bug_check
+        type: code_judge
+        script: ["python", "./judges/bug_check.py"]
 ````
 
 ## Field Reference
@@ -152,10 +152,11 @@ Default execution settings for all tests.
 execution:
   target: default                 # Target provider name
   timeout_seconds: 300            # Max execution time
-  evaluators:                     # Default evaluators
-    - name: quality
-      type: llm_judge
-      prompt: ./prompts/quality.md
+
+assert:                           # Default evaluators
+  - name: quality
+    type: llm_judge
+    prompt: ./prompts/quality.md
 ```
 
 See [Evaluators](/specification/evaluators/) for evaluator configuration.
@@ -210,12 +211,11 @@ Relative paths in EVAL.yaml are resolved from the file's directory:
 ```yaml
 # If EVAL.yaml is at /project/evals/code-review/EVAL.yaml
 
-execution:
-  evaluators:
-    - name: check
-      type: code_judge
-      script: ["python", "./judges/check.py"]
-      # Resolves to: /project/evals/code-review/judges/check.py
+assert:
+  - name: check
+    type: code_judge
+    script: ["python", "./judges/check.py"]
+    # Resolves to: /project/evals/code-review/judges/check.py
 
 tests:
   - id: example
@@ -249,11 +249,11 @@ For large evaluations, use JSONL format with one test per line:
 **dataset.yaml** (sidecar for shared config):
 ```yaml
 name: large-eval
-execution:
-  evaluators:
-    - name: quality
-      type: llm_judge
-      prompt: ./prompts/quality.md
+
+assert:
+  - name: quality
+    type: llm_judge
+    prompt: ./prompts/quality.md
 ```
 
 ## Validation

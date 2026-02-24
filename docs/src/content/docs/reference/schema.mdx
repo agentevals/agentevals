@@ -58,6 +58,7 @@ version: string           # Optional: Spec version (default: "1.0")
 description: string       # Optional: Human-readable description
 metadata: object          # Optional: Custom key-value pairs
 execution: ExecutionConfig  # Optional: Default execution settings
+assert: Evaluator[]       # Optional: Default evaluators
 tests: (Test | string)[]   # Required: Array of tests or file references
 ```
 
@@ -67,7 +68,8 @@ tests: (Test | string)[]   # Required: Array of tests or file references
 execution:
   target: string              # Target provider name
   timeout_seconds: integer    # Max execution time (1-3600)
-  evaluators: Evaluator[]     # Array of evaluator configs
+  # DEPRECATED: evaluators has moved to the top-level `assert` key
+  # evaluators: Evaluator[]
 ```
 
 ## Test
@@ -87,6 +89,7 @@ tests:
 
     # Evaluation (optional)
     rubrics: (string | Rubric)[]
+    assert: Evaluator[]       # Per-test evaluators
     execution: ExecutionConfig
 
     # Metadata (optional)

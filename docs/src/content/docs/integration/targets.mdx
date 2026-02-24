@@ -139,11 +139,12 @@ Use a different model for evaluation:
 ```yaml
 execution:
   target: fast  # Agent uses fast model
-  evaluators:
-    - name: quality
-      type: llm_judge
-      prompt: ./prompts/quality.md
-      target: powerful  # Judge uses powerful model
+
+assert:
+  - name: quality
+    type: llm_judge
+    prompt: ./prompts/quality.md
+    target: powerful  # Judge uses powerful model
 ```
 
 ## Environment Variables
