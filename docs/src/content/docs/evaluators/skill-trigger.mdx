@@ -1,0 +1,139 @@
+---
+title: Skill Trigger
+description: Detect whether the agent invoked a specific Claude Code skill
+---
+
+The `skill-trigger` evaluator detects whether a Claude Code agent invoked a specific skill during task execution. Use it to test that an agent correctly recognizes when a skill is applicable and triggers it as its first action.
+
+## Configuration
+
+```yaml
+assertions:
+  - type: skill-trigger
+    skill: commit
+    should_trigger: true
+```
+
+### Properties
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| `skill` | `string` | Yes | — | The skill name to detect. Case-sensitive substring match against the tool input. |
+| `should_trigger` | `boolean` | No | `true` | Whether the skill is expected to trigger. Set to `false` for negative test cases. |
+
+## Detection Logic
+
+Only the **first tool call** in the agent's response is examined. Subsequent tool calls are ignored.
+
+| First Tool Call | Pass Condition |
+|-----------------|----------------|
+| `Skill` tool | `input.skill` contains the skill name (case-sensitive substring) |
+| `Read` tool | `input.file_path` contains the skill name (case-sensitive substring) |
+| Any other tool | Not triggered |
+
+When `should_trigger: false`, the pass/fail logic is inverted — the assertion passes if the skill was **not** triggered.
+
+## Examples
+
+### Positive Test Case
+
+Assert that the agent triggers the `commit` skill when asked to commit changes:
+
+```yaml
+tests:
+  - id: triggers-skill
+    input: "Commit my changes"
+    assertions:
+      - type: skill-trigger
+        skill: commit
+        should_trigger: true
+```
+
+### Negative Test Case
+
+Assert that the agent does **not** trigger the `commit` skill for an unrelated prompt:
+
+```yaml
+tests:
+  - id: no-false-trigger
+    input: "What time is it?"
+    assertions:
+      - type: skill-trigger
+        skill: commit
+        should_trigger: false
+```
+
+### Combined Positive and Negative Cases
+
+```yaml
+tests:
+  - id: triggers-on-commit-request
+    input: "Commit my changes"
+    assertions:
+      - type: skill-trigger
+        skill: commit
+        should_trigger: true
+
+  - id: no-trigger-on-unrelated-request
+    input: "What time is it?"
+    assertions:
+      - type: skill-trigger
+        skill: commit
+        should_trigger: false
+
+  - id: triggers-on-push-request
+    input: "Push my branch"
+    assertions:
+      - type: skill-trigger
+        skill: push
+        should_trigger: true
+```
+
+## Role in Transpilation
+
+The `skill-trigger` evaluator is the mechanism the EVAL.yaml transpiler uses to route test cases into per-skill `evals.json` files. When a test case contains a `skill-trigger` assertion, the transpiler places that test case into the eval file for the named skill, with `should_trigger` set accordingly.
+
+This makes `skill-trigger` a first-class part of the EVAL.yaml format for skill-based evaluation workflows.
+
+**Example transpiler routing:**
+
+A test with `type: skill-trigger` / `skill: commit` is placed into the `commit` skill's `evals.json`:
+
+```yaml
+# EVAL.yaml (source)
+tests:
+  - id: commit-trigger
+    input: "Commit my changes"
+    assertions:
+      - type: skill-trigger
+        skill: commit
+        should_trigger: true
+```
+
+```json
+// .agentv/skills/commit/evals.json (transpiled output)
+{
+  "tests": [
+    {
+      "id": "commit-trigger",
+      "input": "Commit my changes",
+      "should_trigger": true
+    }
+  ]
+}
+```
+
+## Scoring
+
+| Outcome | Score |
+|---------|-------|
+| Skill triggered and `should_trigger: true` | 1.0 |
+| Skill not triggered and `should_trigger: false` | 1.0 |
+| Skill triggered and `should_trigger: false` | 0.0 |
+| Skill not triggered and `should_trigger: true` | 0.0 |
+
+## Next Steps
+
+- [Tool Trajectory](/evaluators/tool-trajectory/) - Validate full tool call sequences
+- [Code Judge](/evaluators/code-judge/) - Custom script evaluation
+- [Evaluators Reference](/specification/evaluators/) - All evaluator types

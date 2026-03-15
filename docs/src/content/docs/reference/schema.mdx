@@ -215,6 +215,14 @@ max_cost_usd: number
 max_duration_ms: integer
 ```
 
+### skill_trigger
+
+```yaml
+type: skill-trigger
+skill: string       # Required: Skill name (case-sensitive substring match)
+should_trigger: boolean  # Optional: Expected trigger outcome (default: true)
+```
+
 ## Aggregator
 
 ```yaml
