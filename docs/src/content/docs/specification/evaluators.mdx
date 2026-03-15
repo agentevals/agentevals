@@ -3,7 +3,7 @@ title: Evaluators Reference
 description: Overview of all evaluator types in AgentEvals
 ---
 
-Evaluators are components that assess agent outputs. AgentEvals supports eleven core evaluator types that can be combined to create sophisticated evaluation pipelines.
+Evaluators are components that assess agent outputs. AgentEvals supports twelve core evaluator types that can be combined to create sophisticated evaluation pipelines.
 
 ## Evaluator Types
 
@@ -16,6 +16,7 @@ Evaluators are components that assess agent outputs. AgentEvals supports eleven 
 | [`tool_trajectory`](/evaluators/tool-trajectory/) | Validate tool usage | Agentic behavior validation |
 | [`field_accuracy`](/evaluators/field-accuracy/) | Check data fields | Structured output validation |
 | [`execution_metrics`](/evaluators/execution-metrics/) | Performance bounds | Latency, cost, token limits |
+| [`skill_trigger`](/evaluators/skill-trigger/) | Detect skill invocation | Claude Code skill activation |
 | `contains` | Substring check | Quick output validation |
 | `regex` | Pattern matching | Format validation |
 | `is_json` | JSON validation | API response checks |
@@ -149,6 +150,16 @@ Set performance thresholds.
   max_tokens: 5000
   max_duration_ms: 30000
   max_cost_usd: 0.10
+```
+
+### skill_trigger
+
+Detect whether the agent invoked a specific Claude Code skill as its first tool call.
+
+```yaml
+- type: skill-trigger
+  skill: commit
+  should_trigger: true
 ```
 
 ### contains
